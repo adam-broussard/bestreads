@@ -24,4 +24,4 @@ jobs:
         pip install pylint numpy scipy matplotlib pandas
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint --disable=invalid-name $(git ls-files '*.py')
