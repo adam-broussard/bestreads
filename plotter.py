@@ -6,7 +6,7 @@ def testplot():
     This is a test plot to make sure that linting, pushing, and branch control
     are all working
     """
-    
+
     # Adding a commit to see if things run correctly...
 
     x = [1, 2, 3]
