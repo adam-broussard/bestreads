@@ -1,3 +1,5 @@
+"""A module docstring to make pylint happy"""
+
 from matplotlib import pyplot as plt
 
 
