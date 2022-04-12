@@ -35,7 +35,7 @@ def convert_str_array(string):
         string (str): String containing a set of integers
     """
 
-    if type(string) != str and np.isnan(string):
+    if isinstance(string, str) and np.isnan(string):
         warnings.warn('NaN value detected in convert_str_array(string)',
                       category=RuntimeWarning)
         return np.array([], dtype=int)
