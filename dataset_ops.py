@@ -4,6 +4,7 @@ analysis and cleaning it.
 """
 
 import os
+
 import warnings
 import numpy as np
 import kaggle
@@ -18,13 +19,16 @@ def download_dataset(savedir='data/'):
         savedir (str): The directory where the data will be saved
     """
 
-    if not os.path.isdir(savedir):
-        os.makedirs(savedir)
+
+    print('Downloading data csv...', end='')
+    os.makedirs(savedir, exist_ok=True)
+
 
     kaggle.api.authenticate()
     kaggle.api.dataset_download_files('austinreese/goodreads-books',
                                       path=savedir, unzip=True)
 
+    print('done.')
 
 def convert_str_array(string):
     """
@@ -44,3 +48,4 @@ def convert_str_array(string):
     id_list = np.array(string_list, dtype=int)
 
     return id_list
+
