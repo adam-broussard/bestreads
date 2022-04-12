@@ -48,4 +48,3 @@ def convert_str_array(string):
     id_list = np.array(string_list, dtype=int)
 
     return id_list
-
