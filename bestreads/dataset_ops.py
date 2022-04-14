@@ -70,7 +70,7 @@ def download_covers(url_list, id_list, savedir='data/covers/',
     # Make sure id_list is iterable and set default values if not
     if not hasattr(id_list, '__iter__'):
         raise TypeError('id_list must be iterable.')
-    elif len(url_list) != len(id_list):
+    if len(url_list) != len(id_list):
         raise ValueError('url_list and id_list must be the same length, but '
                          + f'have lengths {len(url_list)} and {len(id_list)}.')
 
@@ -84,17 +84,12 @@ def download_covers(url_list, id_list, savedir='data/covers/',
     if enable_multithreading:
         print(f'Downloading cover art with multithreading to "{savedir}"...')
         # Function can't be local for multiprocessing to work
-        pool = multiprocessing.Pool()
-        # tqdm is a bit janky, but it will get the job done if chunksize != 1
-        pool.starmap(download_single, tqdm(list(zip(url_list, id_list)),
-                                           total=len(url_list)),
-                     chunksize=10)
-        # Stop additional processes from going to the pool and tell processes
-        # to exit when they're done
-        pool.close()
-        # Wait for the exit signal
-        pool.join()
-        # Clean up the previously defined global function
+        with multiprocessing.Pool() as pool:
+            # tqdm is a bit janky, but it will get the job done if
+            # chunksize != 1
+            pool.starmap(download_single, tqdm(list(zip(url_list, id_list)),
+                                               total=len(url_list)),
+                         chunksize=10)
         del download_single
     else:
         print(f'Downloading cover art to "{savedir}"...')
