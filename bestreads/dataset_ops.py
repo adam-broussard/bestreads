@@ -20,7 +20,7 @@ def download_dataset(savedir='data/'):
         savedir (str): The directory where the data will be saved
     """
 
-    print('Downloading data csv...', end='')
+    print(f'Downloading data csv to "{savedir}"...', end='')
     os.makedirs(savedir, exist_ok=True)
 
     kaggle.api.authenticate()
