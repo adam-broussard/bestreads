@@ -3,7 +3,6 @@ This file contains functions for downloading the Goodreads dataset for
 analysis and cleaning it.
 """
 
-from itertools import repeat
 import multiprocessing
 import os
 import warnings
