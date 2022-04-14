@@ -1,5 +1,6 @@
 # Miscellaneous data files
 *.csv
+*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
