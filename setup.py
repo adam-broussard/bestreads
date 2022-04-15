@@ -15,7 +15,7 @@ setup(
                  + 'datasets/austinreese/goodreads-books'),
     long_description=read('README.md'),
     url='https://github.com/adam-broussard/bestreads',
-    author='Adam Broussard',
+    author='Adam Broussard and Anthony Young',
     author_email='adamcbroussard@gmail.com',
     license='GNU GPLv3',
     packages=['bestreads'],
