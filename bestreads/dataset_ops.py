@@ -3,6 +3,7 @@ This file contains functions for downloading the Goodreads dataset for
 analysis and cleaning it.
 """
 
+from itertools import repeat
 import multiprocessing
 import os
 import warnings
@@ -31,6 +32,23 @@ def download_dataset(savedir='data/'):
     print('done.')
 
 
+def _download_single(single_url, single_id, savedir, verbose):
+    """
+    Download a single URL
+    """
+    file_extension = single_url.split('.')[-1]
+    img_data = requests.get(single_url, stream=True)
+
+    img_data = requests.get(single_url).content
+    with open(savedir
+              + f'{single_id:08}.'
+              + file_extension, 'wb') as writefile:
+        writefile.write(img_data)
+
+    if verbose:
+        print(f'Retrieved {single_url}')
+
+
 def download_covers(url_list, id_list, savedir='data/covers/',
                     enable_multithreading=True, verbose=False):
     """
@@ -44,25 +62,6 @@ def download_covers(url_list, id_list, savedir='data/covers/',
             numbering if not specified
         savedir (str): The directory where the images will be saved
     """
-
-    if enable_multithreading:
-        global download_single
-
-    def download_single(single_url, single_id):
-        """
-        Download a single URL
-        """
-        file_extension = single_url.split('.')[-1]
-        img_data = requests.get(single_url, stream=True)
-
-        img_data = requests.get(single_url).content
-        with open(savedir
-                  + f'{single_id:08}.'
-                  + file_extension, 'wb') as writefile:
-            writefile.write(img_data)
-
-        if verbose:
-            print(f'Retrieved {single_url}')
 
     os.makedirs(savedir, exist_ok=True)
 
@@ -86,10 +85,11 @@ def download_covers(url_list, id_list, savedir='data/covers/',
         with multiprocessing.Pool() as pool:
             # tqdm is a bit janky, but it will get the job done if
             # chunksize != 1
-            pool.starmap(download_single, tqdm(list(zip(url_list, id_list)),
-                                               total=len(url_list)),
+            pool.starmap(_download_single, tqdm(list(zip(url_list, id_list,
+                                                         repeat(savedir),
+                                                         repeat(verbose))),
+                                                total=len(url_list)),
                          chunksize=10)
-        del download_single
     else:
         print(f'Downloading cover art to "{savedir}"...')
         for this_url, this_id in tqdm(zip(url_list, id_list),
