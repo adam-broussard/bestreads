@@ -94,7 +94,7 @@ def download_covers(url_list, id_list, savedir='data/covers/',
         print(f'Downloading cover art to "{savedir}"...')
         for this_url, this_id in tqdm(zip(url_list, id_list),
                                       total=len(url_list)):
-            download_single(this_url, this_id)
+            _download_single(this_url, this_id, savedir, verbose)
 
 
 def convert_str_array(string):
