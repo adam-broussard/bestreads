@@ -7,13 +7,14 @@ import warnings
 import numpy as np
 import pandas as pd
 import nltk
+from tqdm import tqdm
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 
 nltk.data.path.append('./data/nltk_data/')
-nltk.download('punkt', download_dir='./data/nltk_data/')
-nltk.download('stopwords', download_dir='./data/nltk_data/')
+nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
+nltk.download('stopwords', download_dir='./data/nltk_data/', quiet=True)
 
 
 def convert_str_array(string):
