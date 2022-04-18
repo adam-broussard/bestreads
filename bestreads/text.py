@@ -77,7 +77,8 @@ def get_genres(genre_and_votes, n=1):
 
     for this_str_rating in tqdm(genre_and_votes):
         split_ratings = this_str_rating.split(', ')
-        votes = [int(this_split.split(' ')[-1])
+        votes = [int(this_split.split(' ')[-1]
+                 .replace('user', ''))  # Single votes recorded as '1user'
                  for this_split in split_ratings][:n]
         genres = [' '.join(this_split.split(' ')[:-1])
                   for this_split in split_ratings][:n]
