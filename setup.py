@@ -22,7 +22,8 @@ setup(
     install_requires=['numpy',
                       'scipy',
                       'kaggle',
-                      'pandas'
+                      'pandas',
+                      'langdetect'
                       ],
 
     classifiers=[
