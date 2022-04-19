@@ -3,6 +3,7 @@ Contains helper functions for reducing text columns in the dataset into
 workable data.
 """
 
+import string
 import warnings
 import numpy as np
 import pandas as pd
@@ -126,13 +127,13 @@ def clean_text(descriptions):
 
     ps = PorterStemmer()
 
-    def clean_single_description(desc, remove_punctuation=False):
+    def clean_single_description(desc, remove_punctuation=True):
 
         if not isinstance(desc, str):
             return np.nan
 
         if remove_punctuation:
-            translator = str.make_trans('', '', str.punctuation)
+            translator = str.maketrans('', '', string.punctuation)
             desc = desc.translate(translator)
 
         tokenized = word_tokenize(desc)
