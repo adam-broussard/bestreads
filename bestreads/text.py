@@ -30,3 +30,4 @@ def add_english_column(data):
         data (pandas.DataFrame): The DataFrame constaining the descriptions of the books.
     """
     data['english_description'] = data['description'].apply(_is_english)
+    
