@@ -6,7 +6,7 @@ from langdetect import detect, LangDetectException
 
 def _is_english(text):
     """
-    Returns a bool indicating whether or not text is in English. 
+    Returns a bool indicating whether or not text is in English.
 
     Args:
         text (str): The text to be recognized.
@@ -17,13 +17,13 @@ def _is_english(text):
     if not isinstance(text, str):
         return False
     try:
-        return (detect(text) == 'en')
+        return detect(text) == 'en'
     except LangDetectException:
         return False
 
 def add_english_column(data):
     """
-    Adds a new column to a DataFrame indicating if the 'description' column is 
+    Adds a new column to a DataFrame indicating if the 'description' column is
     in English.
 
     Args:
