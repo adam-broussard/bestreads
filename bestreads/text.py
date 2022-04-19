@@ -20,24 +20,24 @@ nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
 nltk.download('stopwords', download_dir='./data/nltk_data/', quiet=True)
 
 
-def convert_str_array(string):
+def convert_str_array(str_list):
     """
     Takes in a string of the form '1,2,3' and outputs an array with the
     integer values
 
     Args:
-        string (str): String containing a set of integers
+        str_list (str): String containing a set of integers
 
     Returns:
         id_list (numpy.ndarray): Array of integer id's
     """
 
-    if not isinstance(string, str) and np.isnan(string):
-        warnings.warn('NaN value detected in convert_str_array(string)',
+    if not isinstance(str_list, str) and np.isnan(str_list):
+        warnings.warn('NaN value detected in convert_str_array(str_list)',
                       category=RuntimeWarning)
         return np.array([], dtype=int)
 
-    string_list = string.split(', ')
+    string_list = str_list.split(', ')
     id_list = np.array(string_list, dtype=int)
 
     return id_list
