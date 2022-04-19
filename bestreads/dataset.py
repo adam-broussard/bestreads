@@ -143,7 +143,7 @@ def get_genres(genre_and_votes, n=1):
 
     top_genres = {key: [] for key in column_names}
 
-    if type(genre_and_votes) not in (pd.Series, pd.DataFrame):
+    if not isinstance(genre_and_votes, (pd.Series, pd.DataFrame)):
         if isinstance(genre_and_votes, str):
             genre_and_votes = [genre_and_votes]
         elif np.isnan(genre_and_votes):
@@ -177,7 +177,7 @@ def get_genres(genre_and_votes, n=1):
             top_genres[f'votes_{x}'].append(this_vote)
 
     # If the input was a pandas object, retain original indexing
-    if type(genre_and_votes) not in (pd.Series, pd.DataFrame):
+    if not isinstance(genre_and_votes, (pd.Series, pd.DataFrame)):
         return pd.DataFrame.from_dict(top_genres)
 
     top_genres['index'] = genre_and_votes.index
