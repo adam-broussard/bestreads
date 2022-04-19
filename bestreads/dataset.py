@@ -7,8 +7,6 @@ from itertools import repeat
 import multiprocessing
 import os
 import warnings
-import numpy as np
-import pandas as pd
 import kaggle
 import requests
 from tqdm import tqdm
