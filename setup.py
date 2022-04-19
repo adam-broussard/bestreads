@@ -24,7 +24,8 @@ setup(
                       'kaggle',
                       'pandas',
                       'nltk',
-                      'tqdm'
+                      'tqdm',
+                      'langdetect'
                       ],
 
     classifiers=[

@@ -11,6 +11,8 @@ from tqdm import tqdm
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from langdetect import detect, LangDetectException
+
 
 nltk.data.path.append('./data/nltk_data/')
 nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
@@ -142,3 +144,33 @@ def clean_text(descriptions):
         return filtered
 
     return descriptions.apply(clean_single_description)
+
+
+def _is_english(text):
+    """
+    Returns a bool indicating whether or not text is in English.
+
+    Args:
+        text (str): The text to be recognized.
+
+    Returns:
+        english_bool (bool): Indicates if the text is English.
+    """
+    if not isinstance(text, str):
+        return False
+    try:
+        return detect(text) == 'en'
+    except LangDetectException:
+        return False
+
+
+def add_english_column(data):
+    """
+    Adds a new column to a DataFrame indicating if the 'description' column is
+    in English.
+
+    Args:
+        data (pandas.DataFrame): The DataFrame constaining the descriptions of
+            the books.
+    """
+    data['english_description'] = data['description'].apply(_is_english)
