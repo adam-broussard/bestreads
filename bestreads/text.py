@@ -173,7 +173,8 @@ def add_english_column(data):
     in English. The new DataFrame is returned as a copy.
 
     Args:
-        data (pandas.DataFrame): The DataFrame containing the descriptions of the books.
+        data (pandas.DataFrame): The DataFrame containing the descriptions of
+            the books.
     """
     return data.assign(
         english_description=data['description'].apply(_is_english)
