@@ -1,4 +1,4 @@
-name: Pylint
+name: Linting and Code Style Checks
 
 on:
   push:
