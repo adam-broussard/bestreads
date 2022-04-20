@@ -148,7 +148,7 @@ def clean_text(descriptions):
 
     return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
 
-
+  
 def _is_english(text):
     """
     Returns a bool indicating whether or not text is in English.
@@ -170,10 +170,11 @@ def _is_english(text):
 def add_english_column(data):
     """
     Adds a new column to a DataFrame indicating if the 'description' column is
-    in English.
+    in English. The new DataFrame is returned as a copy.
 
     Args:
-        data (pandas.DataFrame): The DataFrame constaining the descriptions of
-            the books.
+        data (pandas.DataFrame): The DataFrame containing the descriptions of the books.
     """
-    data['english_description'] = data['description'].apply(_is_english)
+    return data.assign(
+        english_description=data['description'].apply(_is_english)
+    )
