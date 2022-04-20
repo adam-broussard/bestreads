@@ -81,11 +81,12 @@ def get_genres(genre_and_votes, n=1):
 
     for this_str_rating in tqdm(genre_and_votes):
         split_ratings = this_str_rating.split(', ')
-        votes = [int(this_split.split(' ')[-1]
-                 .replace('user', ''))  # Single votes recorded as '1user'
-                 for this_split in split_ratings][:n]
-        genres = [' '.join(this_split.split(' ')[:-1])
-                  for this_split in split_ratings][:n]
+
+        # Single votes recorded as '1user' need to be changed to simply 1
+        votes = [int(rating.split(' ')[-1].replace('user', ''))
+                 for rating in split_ratings][:n]
+        genres = [' '.join(rating.split(' ')[:-1])
+                  for rating in split_ratings][:n]
 
         # If we ask for more genres than are available, fill in missing values
         # with np.nan
@@ -104,6 +105,24 @@ def get_genres(genre_and_votes, n=1):
 
     top_genres['index'] = genre_and_votes.index
     return pd.DataFrame.from_dict(top_genres).set_index('index')
+
+
+def _clean_single_description(desc, stemmer, remove_punctuation=True):
+
+    if not isinstance(desc, str):
+        return np.nan
+
+    if remove_punctuation:
+        translator = str.maketrans('', '', string.punctuation)
+        desc = desc.translate(translator)
+
+    tokenized = word_tokenize(desc)
+    stemmed = [stemmer.stem(this_token) for this_token in tokenized]
+
+    stop_words = set(stopwords.words('english'))
+    filtered = [w for w in stemmed if not w.lower() in stop_words]
+
+    return filtered
 
 
 def clean_text(descriptions):
@@ -127,24 +146,7 @@ def clean_text(descriptions):
 
     ps = PorterStemmer()
 
-    def clean_single_description(desc, remove_punctuation=True):
-
-        if not isinstance(desc, str):
-            return np.nan
-
-        if remove_punctuation:
-            translator = str.maketrans('', '', string.punctuation)
-            desc = desc.translate(translator)
-
-        tokenized = word_tokenize(desc)
-        stemmed = [ps.stem(this_token) for this_token in tokenized]
-
-        stop_words = set(stopwords.words('english'))
-        filtered = [w for w in stemmed if not w.lower() in stop_words]
-
-        return filtered
-
-    return descriptions.apply(clean_single_description)
+    return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
 
 
 def _is_english(text):
