@@ -7,8 +7,6 @@ from itertools import repeat
 import multiprocessing
 import os
 import warnings
-import numpy as np
-import pandas as pd
 import kaggle
 import requests
 from tqdm import tqdm
@@ -96,89 +94,3 @@ def download_covers(url_list, id_list, savedir='data/covers/',
         for this_url, this_id in tqdm(zip(url_list, id_list),
                                       total=len(url_list)):
             _download_single(this_url, this_id, savedir, verbose)
-
-
-def convert_str_array(string):
-    """
-    Takes in a string of the form '1,2,3' and outputs an array with the
-    integer values
-
-    Args:
-        string (str): String containing a set of integers
-
-    Returns:
-        id_list (numpy.ndarray): Array of integer id's
-    """
-
-    if not isinstance(string, str) and np.isnan(string):
-        warnings.warn('NaN value detected in convert_str_array(string)',
-                      category=RuntimeWarning)
-        return np.array([], dtype=int)
-
-    string_list = string.split(', ')
-    id_list = np.array(string_list, dtype=int)
-
-    return id_list
-
-
-def get_genres(genre_and_votes, n=1):
-    """
-    Takes in an iterable of strings with genres and votes and returns the top n
-    genres.
-
-    Args:
-        genre_and_votes (pandas.Series): Series of strings with genres and
-            votes
-        n (int): Number of top genres to include in result
-
-    Returns:
-        top_genres (pandas.DataFrame): DataFrame containing the top n genres
-            with their votes with column names 'genre_1', 'votes_1', 'genre_2',
-            etc.
-    """
-
-    column_names = [f'{stub}_{num+1}'
-                    for num in range(n)
-                    for stub in ['genre', 'votes']]
-
-    top_genres = {key: [] for key in column_names}
-
-    if not isinstance(genre_and_votes, (pd.Series, pd.DataFrame)):
-        if isinstance(genre_and_votes, str):
-            genre_and_votes = [genre_and_votes]
-        elif np.isnan(genre_and_votes):
-            return np.nan
-        else:
-            raise TypeError('genre_and_votes must be a pandas.Series or '
-                            + 'pandas.DataFrame object, or a string.')
-
-    elif genre_and_votes.isnull().sum() > 0:
-        warnings.warn('NaN values detected in genre_and_votes; these will be'
-                      + 'skipped', category=RuntimeWarning)
-        genre_and_votes = genre_and_votes[~genre_and_votes.isnull()]
-
-    for this_str_rating in tqdm(genre_and_votes):
-        split_ratings = this_str_rating.split(', ')
-        votes = [int(this_split.split(' ')[-1]
-                     .replace('user', ''))
-                 for this_split in split_ratings][:n]
-        genres = [' '.join(this_split.split(' ')[:-1])
-                  for this_split in split_ratings][:n]
-
-        # If we ask for more genres than are available, fill in missing values
-        # with np.nan
-        if len(votes) < n:
-            votes = votes + [np.nan, ]*(n - len(votes))
-            genres = genres + [np.nan, ]*(n - len(genres))
-
-        for x, (this_genre, this_vote) in enumerate(zip(genres, votes),
-                                                    start=1):
-            top_genres[f'genre_{x}'].append(this_genre)
-            top_genres[f'votes_{x}'].append(this_vote)
-
-    # If the input was a pandas object, retain original indexing
-    if not isinstance(genre_and_votes, (pd.Series, pd.DataFrame)):
-        return pd.DataFrame.from_dict(top_genres)
-
-    top_genres['index'] = genre_and_votes.index
-    return pd.DataFrame.from_dict(top_genres).set_index('index')

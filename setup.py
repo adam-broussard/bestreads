@@ -23,6 +23,8 @@ setup(
                       'scipy',
                       'kaggle',
                       'pandas',
+                      'nltk',
+                      'tqdm',
                       'langdetect'
                       ],
 
