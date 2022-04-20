@@ -148,7 +148,7 @@ def clean_text(descriptions):
 
     return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
 
-  
+
 def _is_english(text):
     """
     Returns a bool indicating whether or not text is in English.
