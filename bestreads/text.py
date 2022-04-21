@@ -221,3 +221,38 @@ def combine_genres(genres, descriptions):
         combined[key] = pd.Series(combined[key])
 
     return combined
+
+
+def tf_idf(combined):
+    """
+    Takes in a combined dictionary of description words grouped by genre and
+    runs tf-idf on each unique word.
+
+    Args:
+        combined (dict): A dictionary where each key is a genre and each value
+            is the combined descriptions for all books in that genre.
+
+    Returns:
+        result (pandas.DataFrame): Each element is the index word's term
+            frequency-inverse document frequency value within descriptions for
+            the corresponding genre in the column name.  Missing words are
+            represented with Nans.
+    """
+
+    unique_word_counts = {}
+    for genre, description in combined.items():
+        unique_word_counts[genre] = description.value_counts(sort=False)
+
+    result = {key: {} for key in combined.keys()}
+    num_docs = len(combined)
+    for genre, word_counts in unique_word_counts.items():
+        num_words = word_counts.sum()
+        for word, count in word_counts.items():
+            tf = count/num_words
+            num_docs_contain = sum([word in unique_word_counts[gen].index
+                                    for gen in combined.keys()
+                                    if gen != genre])
+            idf = np.log(num_docs/(1+num_docs_contain))
+            result[genre][word] = tf*idf
+
+    return pd.DataFrame.from_dict(result)
