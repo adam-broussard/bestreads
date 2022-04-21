@@ -216,4 +216,8 @@ def combine_genres(genres, descriptions):
             if not isinstance(single_desc, float):  # Get rid of lingering nans
                 combined[key] += single_desc
 
+    # Turn into series for easy counting later
+    for key in combined.keys():
+        combined[key] = pd.Series(combined[key])
+
     return combined
