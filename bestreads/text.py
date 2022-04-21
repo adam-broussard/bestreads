@@ -77,16 +77,21 @@ def get_genres(genre_and_votes, n=1):
     elif genre_and_votes.isnull().sum() > 0:
         warnings.warn('NaN values detected in genre_and_votes; these will be'
                       + 'skipped', category=RuntimeWarning)
-        genre_and_votes = genre_and_votes[~genre_and_votes.isnull()]
 
     for this_str_rating in tqdm(genre_and_votes):
-        split_ratings = this_str_rating.split(', ')
+        if isinstance(this_str_rating, float):
+            votes = []
+            genres = []
 
-        # Single votes recorded as '1user' need to be changed to simply 1
-        votes = [int(rating.split(' ')[-1].replace('user', ''))
-                 for rating in split_ratings][:n]
-        genres = [' '.join(rating.split(' ')[:-1])
-                  for rating in split_ratings][:n]
+        else:
+
+            split_ratings = this_str_rating.split(', ')
+
+            # Single votes recorded as '1user' need to be changed to simply 1
+            votes = [int(rating.split(' ')[-1].replace('user', ''))
+                     for rating in split_ratings][:n]
+            genres = [' '.join(rating.split(' ')[:-1])
+                      for rating in split_ratings][:n]
 
         # If we ask for more genres than are available, fill in missing values
         # with np.nan
