@@ -192,11 +192,15 @@ def combine_genres(genres, descriptions):
     the combined processed descriptions associated with each genre.
 
     Args:
-        genres (pandas.Series or pandas.DataFrame):
-        descriptions (pandas.Series or pandas.DataFrame):
+        genres (pandas.Series or pandas.DataFrame): Each book's genre as a
+            string
+        descriptions (pandas.Series or pandas.DataFrame): Each book's
+            description (as a list of strings where each element is a
+            tokenized, stemmed word)
 
     Returns:
-        combined (dict):
+        combined (dict): A dictionary where each key is a genre and its value
+            is a combined pandas.Series of all description words
     """
 
     # Make a dict where keys are unique genres
