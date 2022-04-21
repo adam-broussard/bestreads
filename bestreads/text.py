@@ -184,3 +184,32 @@ def add_english_column(data):
     return data.assign(
         english_description=data['description'].apply(_is_english)
     )
+
+
+def combine_genres(genres, descriptions):
+    """
+    Takes in the genres and cleaned, tokenized, stemmed descriptions to return
+    the combined processed descriptions associated with each genre.
+
+    Args:
+        genres (pandas.Series or pandas.DataFrame):
+        descriptions (pandas.Series or pandas.DataFrame):
+
+    Returns:
+        combined (dict):
+    """
+
+    # Make a dict where keys are unique genres
+
+    unique_genres = set(genres)
+    # Get rid of nans if they're there, but don't complain otherwise
+    unique_genres.discard(np.nan)
+    combined = {key: [] for key in unique_genres}
+
+    for key in combined.keys():
+        genre_descriptions = descriptions[genres == key]
+        for single_desc in genre_descriptions:
+            if not isinstance(single_desc, float):  # Get rid of lingering nans
+                combined[key] += single_desc
+
+    return combined
