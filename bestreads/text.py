@@ -129,6 +129,9 @@ def _clean_single_description(desc, stemmer, remove_punctuation=True):
     if not isinstance(desc, str):
         return np.nan
 
+    # Fix hyphenated words
+    desc = desc.replace('-', ' ')
+
     if remove_punctuation:
         translator = str.maketrans('', '', string.punctuation)
         desc = desc.translate(translator)
