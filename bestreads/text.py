@@ -98,11 +98,9 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
                                         for rating in split_ratings][:n])
 
             # Check for subgenres and merge any genres that are the same
-            votes = []
             genres = list(np.unique(starting_genres))
-            for x, genre in enumerate(genres):
-                votes[x] = np.sum(starting_votes[starting_genres == genre])
-                genres[x] = genre
+            votes = [np.sum(starting_votes[starting_genres == genre])
+                     for genre in genres]
 
             # Sort results
             votes, genres = list(zip(*sorted(zip(votes, genres))))
