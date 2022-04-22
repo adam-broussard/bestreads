@@ -90,20 +90,22 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
             split_ratings = this_str_rating.split(', ')
 
             # Single votes recorded as '1user' need to be changed to simply 1
-            starting_votes = [int(rating.split(' ')[-1].replace('user', ''))
-                              for rating in split_ratings][:n]
-            starting_genres = [(' '.join(rating.split(' ')[:-1])
-                                .split('-')[0])
-                               for rating in split_ratings][:n]
+            starting_votes = np.array([int(rating.split(' ')[-1]
+                                       .replace('user', ''))
+                                       for rating in split_ratings][:n])
+            starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
+                                        .split('-')[0])
+                                        for rating in split_ratings][:n])
 
             # Check for subgenres and merge any genres that are the same
-            temp_df = pd.DataFrame(zip(starting_genres, starting_votes),
-                                   columns=['starting_genres',
-                                            'starting_votes'])
-            temp_counts = (temp_df.groupby('starting_genres').sum()
-                           .sort_values('starting_votes'))
-            genres = temp_counts.index.to_list()
-            votes = temp_counts['starting_votes'].to_list()
+            votes = []
+            genres = list(np.unique(starting_genres))
+            for x, genre in enumerate(genres):
+                votes[x] = np.sum(starting_votes[starting_genres == genre])
+                genres[x] = genre
+
+            # Sort results
+            votes, genres = list(zip(*sorted(zip(votes, genres))))
 
         # If we ask for more genres than are available, fill in missing values
         # with np.nan
