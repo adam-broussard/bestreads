@@ -93,9 +93,13 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
             starting_votes = np.array([int(rating.split(' ')[-1]
                                        .replace('user', ''))
                                        for rating in split_ratings][:n])
-            starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
-                                        .split('-')[0])
-                                        for rating in split_ratings][:n])
+            if reduce_subgenres:
+                starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
+                                            .split('-')[0])
+                                            for rating in split_ratings][:n])
+            else:
+                starting_genres = np.array([' '.join(rating.split(' ')[:-1])
+                                            for rating in split_ratings][:n])
 
             # Check for subgenres and merge any genres that are the same
             genres = list(np.unique(starting_genres))
