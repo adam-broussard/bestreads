@@ -97,7 +97,7 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
                                for rating in split_ratings][:n]
 
             # Check for subgenres and merge any genres that are the same
-            temp_df = pd.DataFrame([starting_genres, starting_votes],
+            temp_df = pd.DataFrame(zip(starting_genres, starting_votes),
                                    columns=['starting_genres',
                                             'starting_votes'])
             temp_counts = (temp_df.groupby('starting_genres').sum()
