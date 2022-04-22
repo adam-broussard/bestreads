@@ -77,16 +77,21 @@ def get_genres(genre_and_votes, n=1):
     elif genre_and_votes.isnull().sum() > 0:
         warnings.warn('NaN values detected in genre_and_votes; these will be'
                       + 'skipped', category=RuntimeWarning)
-        genre_and_votes = genre_and_votes[~genre_and_votes.isnull()]
 
     for this_str_rating in tqdm(genre_and_votes):
-        split_ratings = this_str_rating.split(', ')
+        if isinstance(this_str_rating, float):
+            votes = []
+            genres = []
 
-        # Single votes recorded as '1user' need to be changed to simply 1
-        votes = [int(rating.split(' ')[-1].replace('user', ''))
-                 for rating in split_ratings][:n]
-        genres = [' '.join(rating.split(' ')[:-1])
-                  for rating in split_ratings][:n]
+        else:
+
+            split_ratings = this_str_rating.split(', ')
+
+            # Single votes recorded as '1user' need to be changed to simply 1
+            votes = [int(rating.split(' ')[-1].replace('user', ''))
+                     for rating in split_ratings][:n]
+            genres = [' '.join(rating.split(' ')[:-1])
+                      for rating in split_ratings][:n]
 
         # If we ask for more genres than are available, fill in missing values
         # with np.nan
@@ -179,3 +184,77 @@ def add_english_column(data):
     return data.assign(
         english_description=data['description'].apply(_is_english)
     )
+
+
+def combine_genres(genres, descriptions):
+    """
+    Takes in the genres and cleaned, tokenized, stemmed descriptions to return
+    the combined processed descriptions associated with each genre.
+
+    Args:
+        genres (pandas.Series or pandas.DataFrame): Each book's genre as a
+            string
+        descriptions (pandas.Series or pandas.DataFrame): Each book's
+            description (as a list of strings where each element is a
+            tokenized, stemmed word)
+
+    Returns:
+        combined (dict): A dictionary where each key is a genre and its value
+            is a combined pandas.Series of all description words
+    """
+
+    # Make a dict where keys are unique genres
+
+    unique_genres = set(genres)
+    # Get rid of nans if they're there, but don't complain otherwise
+    unique_genres.discard(np.nan)
+    combined = {key: [] for key in unique_genres}
+
+    for key in combined.keys():
+        genre_descriptions = descriptions[genres == key]
+        for single_desc in genre_descriptions:
+            if not isinstance(single_desc, float):  # Get rid of lingering nans
+                combined[key] += single_desc
+
+    # Turn into series for easy counting later
+    for key in combined.keys():
+        combined[key] = pd.Series(combined[key])
+
+    return combined
+
+
+def tf_idf(combined):
+    """
+    Takes in a combined dictionary of description words grouped by genre and
+    runs tf-idf on each unique word.
+
+    Args:
+        combined (dict): A dictionary where each key is a genre and each value
+            is the combined descriptions for all books in that genre.
+
+    Returns:
+        result (pandas.DataFrame): Each element is the index word's term
+            frequency-inverse document frequency value within descriptions for
+            the corresponding genre in the column name.
+    """
+
+    unique_word_counts = {}
+    for genre, description in combined.items():
+        unique_word_counts[genre] = description.value_counts(sort=False)
+
+    result = {key: {} for key in combined.keys()}
+    num_docs = len(combined)
+    for genre, word_counts in tqdm(unique_word_counts.items()):
+        num_words = word_counts.sum()
+        for word, count in word_counts.items():
+            tf = count/num_words
+            num_docs_contain = sum([word in unique_word_counts[gen].index
+                                    for gen in combined.keys()
+                                    if gen != genre])
+            idf = np.log(num_docs/(1+num_docs_contain))
+            result[genre][word] = tf*idf
+
+    result = pd.DataFrame.from_dict(result)
+    result.fillna(0, inplace=True)
+
+    return result
