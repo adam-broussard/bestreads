@@ -60,13 +60,13 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
         votes (list)): Votes associated with genres
     """
 
-    if isinstance(this_str_rating, float):
+    if isinstance(str_rating, float):
         votes = []
         genres = []
 
     else:
 
-        split_ratings = this_str_rating.split(', ')
+        split_ratings = str_rating.split(', ')
 
         # Single votes recorded as '1user' need to be changed to simply 1
         starting_votes = np.array([int(rating.split(' ')[-1]
