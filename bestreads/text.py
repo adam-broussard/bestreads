@@ -244,7 +244,7 @@ def tf_idf(combined):
 
     result = {key: {} for key in combined.keys()}
     num_docs = len(combined)
-    for genre, word_counts in unique_word_counts.items():
+    for genre, word_counts in tqdm(unique_word_counts.items()):
         num_words = word_counts.sum()
         for word, count in word_counts.items():
             tf = count/num_words
