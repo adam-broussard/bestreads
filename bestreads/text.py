@@ -43,6 +43,60 @@ def convert_str_array(str_list):
     return id_list
 
 
+def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
+    """
+    Takes in a string with genres and votes and returns lists with genres and
+    votes.  Returns NaN values if n > number of genres with votes.
+
+    Args:
+        genre_and_votes (pandas.Series): Series of strings with genres and
+            votes
+        n (int): Number of top genres to include in result
+        reduce_subgenres (bool): Will store a genre with a name like "Science
+            Fiction - Aliens" as "Science Fiction"
+
+    Returns:
+        genres (list): List of genres
+        votes (list)): Votes associated with genres
+    """
+
+    if isinstance(this_str_rating, float):
+        votes = []
+        genres = []
+
+    else:
+
+        split_ratings = this_str_rating.split(', ')
+
+        # Single votes recorded as '1user' need to be changed to simply 1
+        starting_votes = np.array([int(rating.split(' ')[-1]
+                                   .replace('user', ''))
+                                   for rating in split_ratings][:n])
+        if reduce_subgenres:
+            starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
+                                        .split('-', maxsplit=1)[0])
+                                        for rating in split_ratings][:n])
+        else:
+            starting_genres = np.array([' '.join(rating.split(' ')[:-1])
+                                        for rating in split_ratings][:n])
+
+        # Check for subgenres and merge any genres that are the same
+        genres = list(np.unique(starting_genres))
+        votes = [np.sum(starting_votes[starting_genres == genre])
+                 for genre in genres]
+
+        # Sort results
+        votes, genres = list(zip(*sorted(zip(votes, genres))))
+
+    # If we ask for more genres than are available, fill in missing values
+    # with np.nan
+    if len(votes) < n:
+        votes = votes + [np.nan, ]*(n - len(votes))
+        genres = genres + [np.nan, ]*(n - len(genres))
+
+    return genres, votes
+
+
 def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
     """
     Takes in an iterable of strings with genres and votes and returns the top n
@@ -81,39 +135,9 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
                       + 'skipped', category=RuntimeWarning)
 
     for this_str_rating in tqdm(genre_and_votes):
-        if isinstance(this_str_rating, float):
-            votes = []
-            genres = []
 
-        else:
-
-            split_ratings = this_str_rating.split(', ')
-
-            # Single votes recorded as '1user' need to be changed to simply 1
-            starting_votes = np.array([int(rating.split(' ')[-1]
-                                       .replace('user', ''))
-                                       for rating in split_ratings][:n])
-            if reduce_subgenres:
-                starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
-                                            .split('-')[0])
-                                            for rating in split_ratings][:n])
-            else:
-                starting_genres = np.array([' '.join(rating.split(' ')[:-1])
-                                            for rating in split_ratings][:n])
-
-            # Check for subgenres and merge any genres that are the same
-            genres = list(np.unique(starting_genres))
-            votes = [np.sum(starting_votes[starting_genres == genre])
-                     for genre in genres]
-
-            # Sort results
-            votes, genres = list(zip(*sorted(zip(votes, genres))))
-
-        # If we ask for more genres than are available, fill in missing values
-        # with np.nan
-        if len(votes) < n:
-            votes = votes + [np.nan, ]*(n - len(votes))
-            genres = genres + [np.nan, ]*(n - len(genres))
+        genres, votes = _extract_genre_and_votes(this_str_rating, n,
+                                                 reduce_subgenres)
 
         for x, (this_genre, this_vote) in enumerate(zip(genres, votes),
                                                     start=1):
