@@ -235,8 +235,7 @@ def tf_idf(combined):
     Returns:
         result (pandas.DataFrame): Each element is the index word's term
             frequency-inverse document frequency value within descriptions for
-            the corresponding genre in the column name.  Missing words are
-            represented with Nans.
+            the corresponding genre in the column name.
     """
 
     unique_word_counts = {}
@@ -255,4 +254,7 @@ def tf_idf(combined):
             idf = np.log(num_docs/(1+num_docs_contain))
             result[genre][word] = tf*idf
 
-    return pd.DataFrame.from_dict(result)
+    result = pd.DataFrame.from_dict(result)
+    result.fillna(0, inplace=True)
+
+    return result
