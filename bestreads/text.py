@@ -197,36 +197,27 @@ def clean_text(descriptions):
     return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
 
 
-def _is_english(text):
+def is_english(data):
     """
     Returns a bool indicating whether or not text is in English.
 
     Args:
-        text (str): The text to be recognized.
-
-    Returns:
-        english_bool (bool): Indicates if the text is English.
-    """
-    if not isinstance(text, str):
-        return False
-    try:
-        return detect(text) == 'en'
-    except LangDetectException:
-        return False
-
-
-def add_english_column(data):
-    """
-    Adds a new column to a DataFrame indicating if the 'description' column is
-    in English. The new DataFrame is returned as a copy.
-
-    Args:
         data (pandas.DataFrame): The DataFrame containing the descriptions of
             the books.
+
+    Returns:
+        pandas.DataFrame: Contains booleans indicating if the
+            description is in English.
     """
-    return data.assign(
-        english_description=data['description'].apply(_is_english)
-    )
+    def is_english_single(text):
+        if not isinstance(text, str):
+            return False
+        try:
+            return detect(text) == 'en'
+        except LangDetectException:
+            return False
+
+    return data['description'].apply(is_english_single)
 
 
 def combine_genres(genres, descriptions):
