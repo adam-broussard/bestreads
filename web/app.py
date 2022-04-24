@@ -33,8 +33,7 @@ def index():
         description = request.form['description']
         genre = predict_genre_from_description(description)
         return render_template('result.html', genre=genre)
-    else:
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 @app.route('/result', methods=['POST', 'GET'])
@@ -52,8 +51,7 @@ def result(genre):
         description = request.form['description']
         genre = predict_genre_from_description(description)
         return render_template('result.html', genre=genre)
-    else:
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 if __name__ == "__main__":
