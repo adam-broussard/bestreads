@@ -7,6 +7,7 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
+
 def predict_genre_from_description(description):
     """
     Returns the genre predicted for given description. This is temporary.
@@ -20,6 +21,7 @@ def predict_genre_from_description(description):
     if description == 'test':
         return 'Fantasy'
     return None
+
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
