@@ -32,10 +32,7 @@ def index():
     if request.method == 'POST':
         description = request.form['description']
         genre = predict_genre_from_description(description)
-        try:
-            return render_template('result.html', genre=genre)
-        except Exception:
-            return 'There was an error.'
+        return render_template('result.html', genre=genre)
     else:
         return render_template('index.html')
 
@@ -54,10 +51,7 @@ def result(genre):
     if request.method == 'POST':
         description = request.form['description']
         genre = predict_genre_from_description(description)
-        try:
-            return render_template('result.html', genre=genre)
-        except Exception:
-            return 'There was an error.'
+        return render_template('result.html', genre=genre)
     else:
         return render_template('index.html')
 
