@@ -1,12 +1,12 @@
 """
-Runs a website allowing a user to predict the genre of a book from its 
+Runs a website allowing a user to predict the genre of a book from its
 description.
 """
 
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
- 
+
 def predict_genre_from_description(description):
     """
     Returns the genre predicted for given description. This is temporary.
@@ -19,8 +19,7 @@ def predict_genre_from_description(description):
     """
     if description == 'test':
         return 'Fantasy'
-    else:
-        return None
+    return None
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
@@ -45,7 +44,7 @@ def index():
 def result(genre):
     """
     Renders the result.html page for the given result.
-    
+
     Args:
         genre (str): The genre to be given as a result.
 
