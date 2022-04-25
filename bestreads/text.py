@@ -318,7 +318,8 @@ def query(text, weight_scheme=0,
 
     query_term_weight = {key: 1. for key in set(tokenized_description)}
     if weight_scheme == 1:
-        mode_count = tokenized_description.count(mode(tokenized_description))
+        mode_count = max([tokenized_description.count(word)
+                          for word in set(tokenized_description)])
 
         def query_weight(word, doc_freq):
             return ((0.5
