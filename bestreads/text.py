@@ -193,8 +193,12 @@ def clean_text(descriptions):
                         + 'pandas.DataFrame object, or a string.')
 
     ps = PorterStemmer()
+    cleaned_text = descriptions.apply(lambda desc:
+                                      _clean_single_description(desc, ps))
+    if len(cleaned_text) == 1:
+        cleaned_text = cleaned_text[0]
 
-    return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
+    return cleaned_text
 
 
 def is_english(descriptions):
