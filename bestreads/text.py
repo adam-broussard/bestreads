@@ -298,8 +298,7 @@ def tf_idf(combined):
     return result
 
 
-def query(text, weight_scheme=0,
-          tf_idf_table_path='../data/processed/tf_idf_table_train.csv'):
+def query(text, tf_idf_table, weight_scheme=0):
     """
     Queries the TF-IDF table using a new description.
 
@@ -314,7 +313,6 @@ def query(text, weight_scheme=0,
     """
 
     tokenized_description = clean_text(text)
-    tf_idf_table = pd.read_csv(tf_idf_table_path, index_col=0)
 
     query_term_weight = {key: 1. for key in set(tokenized_description)}
     if weight_scheme == 1:
