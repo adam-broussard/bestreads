@@ -193,8 +193,12 @@ def clean_text(descriptions):
                         + 'pandas.DataFrame object, or a string.')
 
     ps = PorterStemmer()
+    cleaned_text = descriptions.apply(lambda desc:
+                                      _clean_single_description(desc, ps))
+    if len(cleaned_text) == 1:
+        cleaned_text = cleaned_text[0]
 
-    return descriptions.apply(lambda desc: _clean_single_description(desc, ps))
+    return cleaned_text
 
 
 def is_english(descriptions):
@@ -292,3 +296,53 @@ def tf_idf(combined):
     result.fillna(0, inplace=True)
 
     return result
+
+
+def query(text, tf_idf_table, weight_scheme=0):
+    """
+    Queries the TF-IDF table using a new description.
+
+    Args:
+        text (string): A book description
+        weight_scheme (int): The query term weighting scheme.  0 corresponds to
+            no special weighting. 1 corresponds to weighting more common words
+            higher.
+        tf_idf_table_path (string): Path to file containing TF-IDF table
+
+    Returns: genre_scores (pandas.Series): The TF-IDF scores of each genre.
+    """
+
+    tokenized_description = clean_text(text)
+
+    query_term_weight = {key: 1. for key in set(tokenized_description)}
+    if weight_scheme == 1:
+        mode_count = max([tokenized_description.count(word)
+                          for word in set(tokenized_description)])
+
+        def query_weight(word, doc_freq):
+            return ((0.5
+                     + 0.5 * (tokenized_description.count(word) / mode_count))
+                    * np.log(len(tf_idf_table.columns) / doc_freq))
+
+        for word in query_term_weight:
+            if word in tf_idf_table.index:
+                doc_freq = (tf_idf_table.loc[word] > 0).sum() + 1.
+                query_term_weight[word] = query_weight(word, doc_freq)
+            else:
+                query_term_weight[word] = query_weight(word, 1.)
+
+    genre_scores = {key: 0. for key in tf_idf_table.columns}
+
+    for word in tqdm(tokenized_description):
+        if word in tf_idf_table.index:
+            for key in genre_scores.keys():
+                genre_scores[key] += (tf_idf_table[key][word]
+                                      * query_term_weight[word])
+
+    genre_scores = pd.Series(genre_scores.values(),
+                             index=genre_scores.keys())
+
+    genre_scores = (genre_scores
+                    .sort_values(ascending=False))
+
+    return genre_scores
