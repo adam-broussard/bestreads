@@ -258,7 +258,7 @@ def combine_genres(genres, descriptions, book_threshold=25):
     for key in list(combined.keys()):
         genre_inds = (genres == key) & (descriptions.notna())
         if sum(genre_inds) < book_threshold:
-            del(combined[key])
+            del combined[key]
         else:
             genre_descriptions = descriptions[genre_inds]
             for single_desc in genre_descriptions:
