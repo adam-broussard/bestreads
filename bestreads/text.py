@@ -56,13 +56,13 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
             Fiction - Aliens" as "Science Fiction"
 
     Returns:
-        genres (list): List of genres
-        votes (list)): Votes associated with genres
+        genres (tuple): List of genres
+        votes (tuple): Votes associated with genres
     """
 
     if isinstance(str_rating, float):
-        votes = []
-        genres = []
+        votes = ()
+        genres = ()
 
     else:
 
@@ -71,28 +71,30 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
         # Single votes recorded as '1user' need to be changed to simply 1
         starting_votes = np.array([int(rating.split(' ')[-1]
                                    .replace('user', ''))
-                                   for rating in split_ratings][:n])
+                                   for rating in split_ratings])
         if reduce_subgenres:
             starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
                                         .split('-', maxsplit=1)[0])
-                                        for rating in split_ratings][:n])
+                                        for rating in split_ratings])
         else:
             starting_genres = np.array([' '.join(rating.split(' ')[:-1])
-                                        for rating in split_ratings][:n])
+                                        for rating in split_ratings])
 
         # Check for subgenres and merge any genres that are the same
-        genres = list(np.unique(starting_genres))
-        votes = [np.sum(starting_votes[starting_genres == genre])
-                 for genre in genres]
+        genres = tuple(np.unique(starting_genres))
+        votes = (np.sum(starting_votes[starting_genres == genre])
+                 for genre in genres)
 
         # Sort results
-        votes, genres = list(zip(*sorted(zip(votes, genres))))
+        votes, genres = list(zip(*reversed(sorted(zip(votes, genres)))))
+        votes = votes[:n]
+        genres = genres[:n]
 
     # If we ask for more genres than are available, fill in missing values
     # with np.nan
     if len(votes) < n:
-        votes = votes + [np.nan, ]*(n - len(votes))
-        genres = genres + [np.nan, ]*(n - len(genres))
+        votes = votes + (np.nan, )*(n - len(votes))
+        genres = genres + (np.nan, )*(n - len(genres))
 
     return genres, votes
 
