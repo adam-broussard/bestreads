@@ -43,7 +43,8 @@ def convert_str_array(str_list):
     return id_list
 
 
-def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
+def _extract_genre_and_votes(str_rating, n, reduce_subgenres,
+                             vote_threshold=25):
     """
     Takes in a string with genres and votes and returns lists with genres and
     votes.  Returns NaN values if n > number of genres with votes.
@@ -87,8 +88,12 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres):
 
         # Sort results
         votes, genres = list(zip(*reversed(sorted(zip(votes, genres)))))
-        votes = votes[:n]
-        genres = genres[:n]
+        if sum(votes) < vote_threshold:
+            votes = ()
+            genres = ()
+        else:
+            votes = votes[:n]
+            genres = genres[:n]
 
     # If we ask for more genres than are available, fill in missing values
     # with np.nan
@@ -226,7 +231,7 @@ def is_english(descriptions):
     return descriptions.apply(is_english_single)
 
 
-def combine_genres(genres, descriptions):
+def combine_genres(genres, descriptions, book_threshold=25):
     """
     Takes in the genres and cleaned, tokenized, stemmed descriptions to return
     the combined processed descriptions associated with each genre.
@@ -250,10 +255,13 @@ def combine_genres(genres, descriptions):
     unique_genres.discard(np.nan)
     combined = {key: [] for key in unique_genres}
 
-    for key in combined.keys():
-        genre_descriptions = descriptions[genres == key]
-        for single_desc in genre_descriptions:
-            if not isinstance(single_desc, float):  # Get rid of lingering nans
+    for key in list(combined.keys()):
+        genre_inds = (genres == key) & (descriptions.notna())
+        if sum(genre_inds) < book_threshold:
+            del(combined[key])
+        else:
+            genre_descriptions = descriptions[genre_inds]
+            for single_desc in genre_descriptions:
                 combined[key] += single_desc
 
     # Turn into series for easy counting later
