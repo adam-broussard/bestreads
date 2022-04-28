@@ -335,7 +335,7 @@ def query(text, tf_idf_table, weight_scheme=0):
 
     genre_scores = {key: 0. for key in tf_idf_table.columns}
 
-    for word in tqdm(tokenized_description):
+    for word in tokenized_description:
         if word in tf_idf_table.index:
             for key in genre_scores.keys():
                 genre_scores[key] += (tf_idf_table[key][word]
