@@ -69,17 +69,18 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres,
 
         split_ratings = str_rating.split(', ')
 
-        # Single votes recorded as '1user' need to be changed to simply 1
-        starting_votes = np.array([int(rating.split(' ')[-1]
-                                   .replace('user', ''))
-                                   for rating in split_ratings])
-        if reduce_subgenres:
-            starting_genres = np.array([(' '.join(rating.split(' ')[:-1])
-                                        .split('-', maxsplit=1)[0])
-                                        for rating in split_ratings])
-        else:
-            starting_genres = np.array([' '.join(rating.split(' ')[:-1])
-                                        for rating in split_ratings])
+        starting_votes = []
+        starting_genres = []
+        for rating in split_ratings:
+            # Single votes recorded as '1user' need to be changed to simply 1
+            num_votes = int(rating.split(' ')[-1].replace('user', ''))
+            starting_votes.append(num_votes)
+
+            genre_text = ' '.join(rating.split(' ')[:-1])
+            if reduce_subgenres:
+                # Delete everything after a hyphen
+                genre_text = genre_text.split('-', maxsplit=1)[0]
+            starting_genres.append(genre_text)
 
         # Check for subgenres and merge any genres that are the same
         genres = tuple(np.unique(starting_genres))
@@ -122,9 +123,10 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
             etc.
     """
 
-    column_names = [f'{stub}_{num+1}'
-                    for num in range(n)
-                    for stub in ['genre', 'votes']]
+    column_names = []
+    for num in range(n):
+        for stub in ['genre', 'votes']:
+            column_names.append(f'{stub}_{num+1}')
 
     top_genres = {key: [] for key in column_names}
 
@@ -143,6 +145,7 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
 
     for this_str_rating in tqdm(genre_and_votes):
 
+        # Get genres and votes from string
         genres, votes = _extract_genre_and_votes(this_str_rating, n,
                                                  reduce_subgenres)
 
@@ -151,10 +154,11 @@ def get_genres(genre_and_votes, n=1, reduce_subgenres=True):
             top_genres[f'genre_{x}'].append(this_genre)
             top_genres[f'votes_{x}'].append(this_vote)
 
-    # If the input was a pandas object, retain original indexing
+    # If input was not a pandas object, just return default indexing
     if type(genre_and_votes) not in (pd.Series, pd.DataFrame):
         return pd.DataFrame.from_dict(top_genres)
 
+    # If the input was a pandas object, retain original indexing
     top_genres['index'] = genre_and_votes.index
     return pd.DataFrame.from_dict(top_genres).set_index('index')
 
@@ -174,6 +178,7 @@ def _clean_single_description(desc, stemmer, remove_punctuation=True):
     tokenized = word_tokenize(desc)
     stemmed = [stemmer.stem(this_token) for this_token in tokenized]
 
+    # Remove stop words
     stop_words = set(stopwords.words('english'))
     filtered = [w for w in stemmed if not w.lower() in stop_words]
 
@@ -257,9 +262,12 @@ def combine_genres(genres, descriptions, book_threshold=25):
 
     for key in list(combined.keys()):
         genre_inds = (genres == key) & (descriptions.notna())
+
         if sum(genre_inds) < book_threshold:
+            # Delete the genre if it doesn't have enough books
             del combined[key]
         else:
+            # Otherwise, concatenate it with other descriptions in this genre
             genre_descriptions = descriptions[genre_inds]
             for single_desc in genre_descriptions:
                 combined[key] += single_desc
@@ -286,6 +294,7 @@ def tf_idf(combined):
             the corresponding genre in the column name.
     """
 
+    # Count how many times each unique word occurs in each genre
     unique_word_counts = {}
     for genre, description in combined.items():
         unique_word_counts[genre] = description.value_counts(sort=False)
@@ -293,9 +302,11 @@ def tf_idf(combined):
     result = {key: {} for key in combined.keys()}
     num_docs = len(combined)
     for genre, word_counts in tqdm(unique_word_counts.items()):
-        num_words = word_counts.sum()
+        total_words = word_counts.sum()
         for word, count in word_counts.items():
-            tf = count/num_words
+            tf = count/total_words
+            # Count the number of documents containing this word (not counting
+            # this one)
             num_docs_contain = sum([word in unique_word_counts[gen].index
                                     for gen in combined.keys()
                                     if gen != genre])
@@ -324,6 +335,9 @@ def query(text, tf_idf_table, weight_scheme=0):
 
     tokenized_description = clean_text(text)
 
+    # This allows us to use various different weighting schemes ; see wikipedia
+    # page on TF-IDF query term weights for more info.  Defaults to no special
+    # weighting.
     query_term_weight = {key: 1. for key in set(tokenized_description)}
     if weight_scheme == 1:
         mode_count = max([tokenized_description.count(word)
@@ -339,6 +353,8 @@ def query(text, tf_idf_table, weight_scheme=0):
                 doc_freq = (tf_idf_table.loc[word] > 0).sum() + 1.
                 query_term_weight[word] = query_weight(word, doc_freq)
             else:
+                # Use doc frequency of 1 when it isn't in any document to
+                # prevent division by 0.
                 query_term_weight[word] = query_weight(word, 1.)
 
     genre_scores = {key: 0. for key in tf_idf_table.columns}
