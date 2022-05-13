@@ -12,7 +12,7 @@ from matplotlib import image
 from PIL import UnidentifiedImageError
 from keras.models import Sequential, model_from_yaml
 from keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
-from keras.optimizers import Adam
+from keras.optimizers import Adam  # pylint: disable=[E0611]
 import tensorflow as tf
 
 
