@@ -273,9 +273,12 @@ def get_train_val_datasets(val_frac=0.15):
     return train_dataset, val_dataset
 
 
-def train_cnn():
+def train_cnn(epochs=50):
     '''
     Get the training and validation datasets, and then train the CNN.
+
+    Args:
+        epochs (int): The number of times to loop through the training data
 
     Returns:
         history (tf.keras.callbacks.History): An object holding the training
@@ -287,7 +290,7 @@ def train_cnn():
 
     model = build_cnn()
 
-    history = model.fit(train_dataset, epochs=50, verbose=1,
+    history = model.fit(train_dataset, epochs=epochs, verbose=1,
                         validation_data=val_dataset)
 
     return history, model
