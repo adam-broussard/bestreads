@@ -10,10 +10,9 @@ import numpy as np
 from tqdm import tqdm
 from matplotlib import image
 from PIL import UnidentifiedImageError
-from keras.models import Sequential
+from keras.models import Sequential, model_from_yaml
 from keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
-from keras.models import model_from_yaml
-from tensorflow.keras.optimizers import Adam
+from keras.optimizers import Adam
 import tensorflow as tf
 
 
