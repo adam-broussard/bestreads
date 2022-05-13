@@ -105,17 +105,17 @@ def build_cnn():
         model (Sequential): CNN model
     '''
 
+    # This setup with the defualt batch size uses about 7.5 GB of memory and
+    # takes around 30 minutes per epoch of training on Adam's laptop.
     model = Sequential([
                         Conv2D(64, 3,
                                activation='relu',
                                input_shape=(500, 300, 3)),
-                        MaxPooling2D(2),
+                        MaxPooling2D(4),
                         Conv2D(128, 3, activation='relu'),
                         Conv2D(128, 3, activation='relu'),
                         MaxPooling2D(2),
-                        Conv2D(256, 3, activation='relu'),
-                        Conv2D(256, 3, activation='relu'),
-                        MaxPooling2D(2),
+                        Conv2D(64, 3, activation='relu'),
                         Flatten(),
                         Dense(64, activation='relu'),
                         Dropout(0.5),
@@ -125,8 +125,7 @@ def build_cnn():
                         Lambda(lambda x: x*5)])
 
     model.compile(loss='mse',
-                  optimizer=Adam(),
-                  metrics=['accuracy'])
+                  optimizer=Adam())
     return model
 
 
