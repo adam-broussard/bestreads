@@ -275,3 +275,50 @@ def train_cnn():
                         validation_data=val_dataset)
 
     return history, model
+
+
+def save_model(model, fname='cnn', save_dir='./'):
+    '''
+    Save CNN model to file
+
+    Args:
+        model (tf.keras.Model): The model to save
+        fname (string): The name of the files
+        save_dir (string): The directory in which to save the files
+    '''
+
+    model_yaml = model.to_yaml()
+    yamlfile = save_dir + fname + '.yaml'
+    h5file = save_dir + fname + '.h5'
+
+    # Save model structure
+    with open(yamlfile, 'w') as yamlwrite:
+        yamlwrite.write(model_yaml)
+
+    # Serialize weights to HDF5
+    model.save_weights(h5file)
+
+
+def read_model(fname='cnn', read_dir='./'):
+    '''
+    Read the CNN model from file
+
+    Args:
+        fname (string): The name of the files
+        read_dir (string): The directory in which to read the saved model
+
+    Returns:
+        loaded_model (tf.keras.Model): The model read from file
+    '''
+
+    yamlfile = read_dir + fname + '.yaml'
+    h5file = read_dir + fname + '.h5'
+
+    readyaml = open(yamlfile, 'r')
+    loaded_model_yaml = readyaml.read()
+    readyaml.close()
+    loaded_model = model_from_yaml(loaded_model_yaml)
+    loaded_mode.load_weights(h5file)
+    loaded_model.compile(loss='mse', optimizer=Adam())
+
+    return loaded_model
