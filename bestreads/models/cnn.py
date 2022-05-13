@@ -3,10 +3,10 @@ Holds functions for building, training, saving, and reading convolutional
 neural network models.
 '''
 
+from glob import glob
 import os
 import pandas as pd
 import numpy as np
-from glob import glob
 from tqdm import tqdm
 from matplotlib import image
 from PIL import UnidentifiedImageError
@@ -15,8 +15,6 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
 from keras.models import model_from_yaml
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
-import tensorflow.keras.preprocessing
-from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 
 def _get_valid_data(data, min_ratings=100,
@@ -51,7 +49,7 @@ def _get_valid_data(data, min_ratings=100,
         if valid[x]:
             image_fname = f'{cover_folder}{row.id:08}.jpg'
             try:
-                im = image.imread(image_fname)
+                image.imread(image_fname)
             except UnidentifiedImageError:
                 print(image_fname + ' unreadable.')
                 valid[x] = False
@@ -101,12 +99,12 @@ def split_train_test_data(data, test_frac=0.2,
     cover_dir = os.path.abspath(cover_dir) + '/'
     for train_id in train_data.id:
         os.symlink(cover_dir + f'{train_id:08}.jpg',
-                   save_dir + f'train_covers/'
+                   save_dir + 'train_covers/'
                    + f'train_{train_id:08}.jpg')
 
     for test_id in test_data.id:
         os.symlink(cover_dir + f'{test_id:08}.jpg',
-                   save_dir + f'test_covers/'
+                   save_dir + 'test_covers/'
                    + f'test_{test_id:08}.jpg')
 
 
@@ -311,7 +309,7 @@ def save_model(model, fname='cnn', save_dir='./'):
     h5file = save_dir + fname + '.h5'
 
     # Save model structure
-    with open(yamlfile, 'w') as yamlwrite:
+    with open(yamlfile, 'w', encoding='ascii') as yamlwrite:
         yamlwrite.write(model_yaml)
 
     # Serialize weights to HDF5
@@ -333,11 +331,10 @@ def read_model(fname='cnn', read_dir='./'):
     yamlfile = read_dir + fname + '.yaml'
     h5file = read_dir + fname + '.h5'
 
-    readyaml = open(yamlfile, 'r')
-    loaded_model_yaml = readyaml.read()
-    readyaml.close()
+    with open(yamlfile, 'r', encoding='ascii') as readyaml:
+        loaded_model_yaml = readyaml.read()
     loaded_model = model_from_yaml(loaded_model_yaml)
-    loaded_mode.load_weights(h5file)
+    loaded_model.load_weights(h5file)
     loaded_model.compile(loss='mse', optimizer=Adam())
 
     return loaded_model
