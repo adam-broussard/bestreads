@@ -21,6 +21,22 @@ from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 def _get_valid_data(data, min_ratings=100,
                     cover_folder='./data/covers/'):
+    '''
+    Eliminates any data with a low nubmer of ratings, null values for
+    average_rating, or unreadable cover images
+
+    Args:
+        data (pandas.DataFrame): All of the goodreads data (or at least a
+            subset with 'id', 'cover_link', 'rating_count', and
+            'average_rating' defined)
+        min_ratings (int): The minimum number of ratings for a book to not be
+            excluded
+        cover_folder (string): The file path where covers are saved
+
+    Returns:
+        valid_data (pd.DataFrame): The subset of data that has valid entries
+            and cover images
+    '''
 
     valid = (data[['id',
                    'cover_link',
@@ -44,7 +60,18 @@ def _get_valid_data(data, min_ratings=100,
 
 def split_train_test_data(data, test_frac=0.2,
                           save_dir='./data/processed/cnn/',
-                          cover_folder='./data/covers/'):
+                          cover_dir='./data/covers/'):
+    '''
+    Generates folders for train and test set cover images and generates
+    symlinks pointing to the original files to save space.
+
+    Args:
+        data (pd.DataFrame): All of the goodreads data
+        test_frac (float): The fraction of the data to be split into a test set
+        save_dir (string): The directory in which to save the train and test
+            set covers
+        cover_dir (string): The directory containing the cover image files
+    '''
 
     valid_data = _get_valid_data(data)
     test_data = valid_data.sample(frac=test_frac)
@@ -58,48 +85,16 @@ def split_train_test_data(data, test_frac=0.2,
     test_data[['id', 'average_rating']].to_csv(save_dir + 'test_ratings.csv',
                                                index=False)
 
-    cover_folder = os.path.abspath(cover_folder) + '/'
+    cover_dir = os.path.abspath(cover_dir) + '/'
     for train_id in train_data.id:
-        os.symlink(cover_folder + f'{train_id:08}.jpg',
+        os.symlink(cover_dir + f'{train_id:08}.jpg',
                    save_dir + f'train_covers/'
                    + f'train_{train_id:08}.jpg')
 
     for test_id in test_data.id:
-        os.symlink(cover_folder + f'{test_id:08}.jpg',
+        os.symlink(cover_dir + f'{test_id:08}.jpg',
                    save_dir + f'test_covers/'
                    + f'test_{test_id:08}.jpg')
-
-
-def get_train_val_datasets_old():
-
-    covers_train = image_dataset_from_directory('./data/processed/cnn/'
-                                                + 'train_covers/',
-                                                label_mode=None,
-                                                batch_size=128,
-                                                image_size=(500, 300),
-                                                seed=1337,
-                                                validation_split=0.15,
-                                                subset='training')
-    covers_val = image_dataset_from_directory('./data/processed/cnn/'
-                                              + 'train_covers/',
-                                              label_mode=None,
-                                              batch_size=128,
-                                              image_size=(500, 300),
-                                              seed=1337,
-                                              validation_split=0.15,
-                                              subset='validation')
-
-    train_ids = [int(fp[-12:-4]) for fp in covers_train.file_paths]
-    val_ids = [int(fp[-12:-4]) for fp in covers_val.file_paths]
-
-    # The second argsort here is needed to flip the reference direction
-    # (we need the location where each element would be placed in a full
-    # sorted set rather than the element that should be in place x)
-    sorted_inds = np.argsort(np.argsort(train_ids + val_ids))
-    train_inds = sorted_inds[:len(train_ids)]
-    val_inds = sorted_inds[len(train_ids):]
-
-    return (train_inds, covers_train), (val_inds, covers_val)
 
 
 def build_cnn():
@@ -136,7 +131,8 @@ def build_cnn():
 
 
 def _parse(file_name, rating):
-    """Function that returns a tuple of normalized image array and rating
+    '''
+    Function that returns a tuple of normalized image array and rating
 
     Args:
         file_name (string): Path to image
@@ -145,7 +141,7 @@ def _parse(file_name, rating):
     returns:
         image_normalized (tf.Tensor): Normalized image tensor
         ratin (float): Associated book rating (out of 5)
-    """
+    '''
     # Read an image from a file
     image_string = tf.io.read_file(file_name)
     # Decode it into a dense vector
@@ -158,12 +154,22 @@ def _parse(file_name, rating):
 
 
 def create_dataset(filenames, ratings, shuffle=True, batch_size=32):
-    """Load and parse dataset.
+    '''
+    Create a tensorflow dataset object and return it.
+
     Args:
-        filenames: list of image paths
-        ratings: Book ratings
-        is_training: boolean to indicate training mode
-    """
+        filenames (iter): List of image paths
+        ratings (iter): List of associated book ratings
+        shuffle (bool): Whether or not to shuffle the dataset after generating
+            it (note this is less effective than shuffling the filenames and
+            ratings beforehand instead because the whole dataset cannot be
+            stored in memory simultaneously.)
+        batch_size (int): The number of images per batch
+
+    Returns:
+        dataset (tf.data.Dataset): A dataset containing the image and rating
+            data
+    '''
 
     # Adapt preprocessing and prefetching dynamically to reduce GPU and CPU
     # idle time
@@ -188,8 +194,26 @@ def create_dataset(filenames, ratings, shuffle=True, batch_size=32):
 def split_files_train_val(val_frac=0.15,
                           rating_path='./data/processed/cnn/train_ratings.csv',
                           img_dir='./data/processed/cnn/train_covers/'):
+    '''
+    Splits the training set into a true training set and a validation set using
+    the filenames and ratings.
 
-    file_paths = np.array(glob(img_dir + '*'))
+    Args:
+        val_frac (float): The fraction of the original training set to use for
+            validation
+        rating_path (string): The path to the .csv file containing an
+            'average_ratings' column.  Should correspond to the sorted cover
+            image filenames.
+        img_dir (string): The directory containing cover images for training
+
+    Returns:
+        train_files (iter): Shuffled list of cover filenames for training
+        train_ratings (iter): Shuffled list of ratings for training
+        val_files (iter): Shuffled list of cover filenames for validation
+        val_ratings (iter): Shuffled list of ratings for validation
+    '''
+
+    file_paths = np.array(sorted(glob(img_dir + '*')))
     ratings = pd.read_csv(rating_path, usecols=['average_rating'],
                           squeeze=True).to_numpy()
 
@@ -212,6 +236,18 @@ def split_files_train_val(val_frac=0.15,
 
 
 def get_train_val_datasets(val_frac=0.15):
+    '''
+    Splits data into training and validation sets and generates Dataset objects
+    to hold them.
+
+    Args:
+        val_frac (float): Fraction of the training data to reserve for
+            validation
+
+    Returns:
+        train_dataset (tf.data.Dataset): The batched training data with ratings
+        val_dataset (tf.data.Dataset): the batched validation data with ratings
+    '''
 
     ((train_files, train_ratings),
         (val_files, val_ratings)) = split_files_train_val(val_frac)
@@ -223,6 +259,13 @@ def get_train_val_datasets(val_frac=0.15):
 
 
 def train_cnn():
+    '''
+    Get the training and validation datasets, and then train the CNN.
+
+    Returns:
+        history (tf.keras.callbacks.History): An object holding the training
+            history of the model
+    '''
 
     train_dataset, val_dataset = get_train_val_datasets()
 
