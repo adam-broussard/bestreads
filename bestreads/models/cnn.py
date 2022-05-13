@@ -264,13 +264,14 @@ def train_cnn():
     Returns:
         history (tf.keras.callbacks.History): An object holding the training
             history of the model
+        model (tf.keras.models.Sequential): The CNN model
     '''
 
     train_dataset, val_dataset = get_train_val_datasets()
 
     model = build_cnn()
 
-    history = model.fit(train_dataset, epochs=50, verbose=2,
+    history = model.fit(train_dataset, epochs=50, verbose=1,
                         validation_data=val_dataset)
 
-    return history
+    return history, model
