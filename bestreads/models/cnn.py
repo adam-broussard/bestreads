@@ -38,12 +38,15 @@ def _get_valid_data(data, min_ratings=100,
             and cover images
     '''
 
+    # Maks sure all of the necessary data is present
     valid = (data[['id',
                    'cover_link',
                    'rating_count',
                    'average_rating']].notnull().all(axis=1)
              & (data['rating_count'] > min_ratings)).to_list()
 
+    # Make sure the cover art is readable (which is generally true, but has a
+    # few exceptions)
     for x, row in enumerate(tqdm(data.itertuples(), total=len(data))):
         if valid[x]:
             image_fname = f'{cover_folder}{row.id:08}.jpg'
@@ -54,6 +57,10 @@ def _get_valid_data(data, min_ratings=100,
                 valid[x] = False
 
     valid_data = data[valid]
+
+    # It is important to sort because later functions rely on being able to
+    # associate cover images with ratings using the sorted filepaths (which
+    # are id numbers)
     valid_data.sort_values('id', inplace=True)
     return valid_data
 
@@ -74,17 +81,23 @@ def split_train_test_data(data, test_frac=0.2,
     '''
 
     valid_data = _get_valid_data(data)
+
+    # Split into test and train
     test_data = valid_data.sample(frac=test_frac)
     train_data = valid_data.drop(test_data.index)
 
     os.makedirs(save_dir + 'train_covers/', exist_ok=True)
     os.makedirs(save_dir + 'test_covers/', exist_ok=True)
 
+    # Save test and train datasets (note only the average_rating is truly
+    # necessary, but including the id allows for some checking that things
+    # match up again properly later if needed)
     train_data[['id', 'average_rating']].to_csv(save_dir + 'train_ratings.csv',
                                                 index=False)
     test_data[['id', 'average_rating']].to_csv(save_dir + 'test_ratings.csv',
                                                index=False)
 
+    # Generate folders of symlinks for training and testing datasets
     cover_dir = os.path.abspath(cover_dir) + '/'
     for train_id in train_data.id:
         os.symlink(cover_dir + f'{train_id:08}.jpg',
@@ -123,6 +136,9 @@ def build_cnn():
                         Dropout(0.5),
                         Dense(1, activation='sigmoid'),
                         Lambda(lambda x: x*5)])
+
+    # Note we could divide the targets by 5 instead of multiplying the output
+    # by 5, but I don't think they're functionally very different.
 
     model.compile(loss='mse',
                   optimizer=Adam())
@@ -212,6 +228,7 @@ def split_files_train_val(val_frac=0.15,
         val_ratings (iter): Shuffled list of ratings for validation
     '''
 
+    # Make sure to sort!  That is how we correlate these with their ratings.
     file_paths = np.array(sorted(glob(img_dir + '*')))
     ratings = pd.read_csv(rating_path, usecols=['average_rating'],
                           squeeze=True).to_numpy()
@@ -221,6 +238,8 @@ def split_files_train_val(val_frac=0.15,
                            + f'{len(ratings)} ratings.  Numbers of files are '
                            + 'ratings should be equal.')
 
+    # Split into training and validation sets and split the filenames and
+    # ratings accordingly
     start_inds = np.arange(len(file_paths))
     np.random.shuffle(start_inds)
     train_inds = start_inds[:int((1-val_frac)*len(start_inds))]
