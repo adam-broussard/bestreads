@@ -1,0 +1,251 @@
+backend: tensorflow
+class_name: Sequential
+config:
+  layers:
+  - class_name: Conv2D
+    config:
+      activation: relu
+      activity_regularizer: null
+      batch_input_shape: !!python/tuple
+      - null
+      - 500
+      - 300
+      - 3
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: &id001 !!python/tuple
+      - 1
+      - 1
+      dtype: float32
+      filters: 64
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      kernel_size: !!python/tuple
+      - 3
+      - 3
+      name: conv2d
+      padding: valid
+      strides: *id001
+      trainable: true
+      use_bias: true
+  - class_name: MaxPooling2D
+    config:
+      data_format: channels_last
+      dtype: float32
+      name: max_pooling2d
+      padding: valid
+      pool_size: !!python/tuple
+      - 4
+      - 4
+      strides: !!python/tuple
+      - 4
+      - 4
+      trainable: true
+  - class_name: Conv2D
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      dtype: float32
+      filters: 128
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      kernel_size: !!python/tuple
+      - 3
+      - 3
+      name: conv2d_1
+      padding: valid
+      strides: *id001
+      trainable: true
+      use_bias: true
+  - class_name: Conv2D
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      dtype: float32
+      filters: 128
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      kernel_size: !!python/tuple
+      - 3
+      - 3
+      name: conv2d_2
+      padding: valid
+      strides: *id001
+      trainable: true
+      use_bias: true
+  - class_name: MaxPooling2D
+    config:
+      data_format: channels_last
+      dtype: float32
+      name: max_pooling2d_1
+      padding: valid
+      pool_size: !!python/tuple
+      - 2
+      - 2
+      strides: !!python/tuple
+      - 2
+      - 2
+      trainable: true
+  - class_name: Conv2D
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      data_format: channels_last
+      dilation_rate: *id001
+      dtype: float32
+      filters: 64
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      kernel_size: !!python/tuple
+      - 3
+      - 3
+      name: conv2d_3
+      padding: valid
+      strides: *id001
+      trainable: true
+      use_bias: true
+  - class_name: Flatten
+    config:
+      data_format: channels_last
+      dtype: float32
+      name: flatten
+      trainable: true
+  - class_name: Dense
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      dtype: float32
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      name: dense
+      trainable: true
+      units: 64
+      use_bias: true
+  - class_name: Dropout
+    config:
+      dtype: float32
+      name: dropout
+      noise_shape: null
+      rate: 0.5
+      seed: null
+      trainable: true
+  - class_name: Dense
+    config:
+      activation: relu
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      dtype: float32
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      name: dense_1
+      trainable: true
+      units: 16
+      use_bias: true
+  - class_name: Dropout
+    config:
+      dtype: float32
+      name: dropout_1
+      noise_shape: null
+      rate: 0.5
+      seed: null
+      trainable: true
+  - class_name: Dense
+    config:
+      activation: sigmoid
+      activity_regularizer: null
+      bias_constraint: null
+      bias_initializer:
+        class_name: Zeros
+        config: {}
+      bias_regularizer: null
+      dtype: float32
+      kernel_constraint: null
+      kernel_initializer:
+        class_name: GlorotUniform
+        config:
+          seed: null
+      kernel_regularizer: null
+      name: dense_2
+      trainable: true
+      units: 1
+      use_bias: true
+  - class_name: Lambda
+    config:
+      arguments: !!python/object/apply:builtins.dict
+      - {}
+      dtype: float32
+      function: !!python/tuple
+      - '4wEAAAAAAAAAAQAAAAIAAABTAAAAcwgAAAB8AGQBFABTACkCTukFAAAAqQApAdoBeHICAAAAcgIA
+
+        AAD6QWU6L3VzZXJzL2FkYW0gYnJvdXNzYXJkL2Rlc2t0b3AvYmVzdHJlYWRzL2Jlc3RyZWFkcy9t
+
+        b2RlbHMvY25uLnB52gg8bGFtYmRhPocAAADzAAAAAA==
+
+        '
+      - null
+      - null
+      function_type: lambda
+      module: bestreads.models.cnn
+      name: lambda
+      output_shape: null
+      output_shape_module: null
+      output_shape_type: raw
+      trainable: true
+  name: sequential
+keras_version: 2.2.4-tf
