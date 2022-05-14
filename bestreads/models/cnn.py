@@ -120,7 +120,7 @@ def build_cnn():
     model = Sequential([
                         Conv2D(64, 3,
                                activation='relu',
-                               input_shape=(500, 300, 3)),
+                               input_shape=(450, 300, 3)),
                         MaxPooling2D(4),
                         Conv2D(128, 3, activation='relu'),
                         Conv2D(128, 3, activation='relu'),
@@ -159,13 +159,13 @@ def _parse(file_name, rating):
     # Decode it into a dense vector
     image_decoded = tf.image.decode_jpeg(image_string, channels=3)
     # Resize it to fixed shape
-    image_resized = tf.image.resize(image_decoded, [500, 300])
+    image_resized = tf.image.resize(image_decoded, [450, 300])
     # Normalize it from [0, 255] to [0.0, 1.0]
     image_normalized = image_resized / 255.0
     return image_normalized, rating
 
 
-def create_dataset(filenames, ratings, shuffle=True, batch_size=32):
+def create_dataset(filenames, ratings, shuffle=False, batch_size=32):
     '''
     Create a tensorflow dataset object and return it.
 
