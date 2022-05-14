@@ -10,9 +10,9 @@ import numpy as np
 from tqdm import tqdm
 from matplotlib import image
 from PIL import UnidentifiedImageError
-from keras.models import Sequential, model_from_yaml
-from keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
-from keras.optimizers import Adam  # pylint: disable=[E0611]
+from tensorflow.keras.models import Sequential, model_from_yaml
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
+from tensorflow.keras.optimizers import Adam  # pylint: disable=[E0611]
 import tensorflow as tf
 
 
@@ -250,7 +250,7 @@ def split_files_train_val(val_frac=0.15,
     return (train_files, train_ratings), (val_files, val_ratings)
 
 
-def get_train_val_datasets(val_frac=0.15):
+def get_train_val_datasets(batch_size = 32, val_frac=0.15):
     '''
     Splits data into training and validation sets and generates Dataset objects
     to hold them.
@@ -267,8 +267,8 @@ def get_train_val_datasets(val_frac=0.15):
     ((train_files, train_ratings),
         (val_files, val_ratings)) = split_files_train_val(val_frac)
 
-    train_dataset = create_dataset(train_files, train_ratings)
-    val_dataset = create_dataset(val_files, val_ratings)
+    train_dataset = create_dataset(train_files, train_ratings, batch_size = batch_size)
+    val_dataset = create_dataset(val_files, val_ratings, batch_size = batch_size)
 
     return train_dataset, val_dataset
 
