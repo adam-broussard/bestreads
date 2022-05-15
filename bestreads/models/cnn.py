@@ -11,7 +11,8 @@ from tqdm import tqdm
 from matplotlib import image
 from PIL import UnidentifiedImageError
 from tensorflow.keras.models import Sequential, model_from_yaml
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, Lambda, MaxPooling2D
+from tensorflow.keras.layers import (Dense, Dropout, Flatten, Conv2D, Lambda,
+                                     MaxPooling2D)
 from tensorflow.keras.optimizers import Adam  # pylint: disable=[E0611]
 import tensorflow as tf
 

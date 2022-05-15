@@ -27,6 +27,7 @@ setup(
                       'tqdm',
                       'langdetect',
                       'tensorflow',
+                      'keras',
                       'matplotlib'
                       ],
 
