@@ -25,7 +25,7 @@ jobs:
         pip install .
     - name: Analyzing the code with pylint
       run: |
-        pylint --disable=invalid-name $(git ls-files '*.py')
+        pylint --disable=invalid-name --extension-pkg-whitelist=tensorflow $(git ls-files '*.py')
     - name: Analyzing the code with pycodestyle
       run: |
         pycodestyle $(git ls-files '*.py')
