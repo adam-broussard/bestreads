@@ -65,7 +65,8 @@ def _get_valid_data(data, min_ratings=100,
 
 def split_train_test_data(data, test_frac=0.2,
                           save_dir='./data/processed/cnn/',
-                          cover_dir='./data/covers/'):
+                          cover_dir='./data/covers/',
+                          random_seed=420):
     '''
     Generates folders for train and test set cover images and generates
     symlinks pointing to the original files to save space.
@@ -81,7 +82,7 @@ def split_train_test_data(data, test_frac=0.2,
     valid_data = _get_valid_data(data)
 
     # Split into test and train
-    test_data = valid_data.sample(frac=test_frac)
+    test_data = valid_data.sample(frac=test_frac, random_state=random_seed)
     train_data = valid_data.drop(test_data.index)
 
     os.makedirs(save_dir + 'train_covers/', exist_ok=True)
@@ -206,7 +207,8 @@ def create_dataset(filenames, ratings, shuffle=False, batch_size=32):
 
 def split_files_train_val(val_frac=0.15,
                           rating_path='./data/processed/cnn/train_ratings.csv',
-                          img_dir='./data/processed/cnn/train_covers/'):
+                          img_dir='./data/processed/cnn/train_covers/',
+                          rand_seed=1337):
     '''
     Splits the training set into a true training set and a validation set using
     the filenames and ratings.
@@ -239,6 +241,7 @@ def split_files_train_val(val_frac=0.15,
     # Split into training and validation sets and split the filenames and
     # ratings accordingly
     start_inds = np.arange(len(file_paths))
+    np.random.seed(rand_seed)
     np.random.shuffle(start_inds)
     train_inds = start_inds[:int((1-val_frac)*len(start_inds))]
     val_inds = start_inds[int((1-val_frac)*len(start_inds)):]
@@ -251,7 +254,7 @@ def split_files_train_val(val_frac=0.15,
     return (train_files, train_ratings), (val_files, val_ratings)
 
 
-def get_train_val_datasets(batch_size = 32, val_frac=0.15):
+def get_train_val_datasets(batch_size=32, val_frac=0.15):
     '''
     Splits data into training and validation sets and generates Dataset objects
     to hold them.
@@ -268,8 +271,10 @@ def get_train_val_datasets(batch_size = 32, val_frac=0.15):
     ((train_files, train_ratings),
         (val_files, val_ratings)) = split_files_train_val(val_frac)
 
-    train_dataset = create_dataset(train_files, train_ratings, batch_size = batch_size)
-    val_dataset = create_dataset(val_files, val_ratings, batch_size = batch_size)
+    train_dataset = create_dataset(train_files, train_ratings,
+                                   batch_size=batch_size)
+    val_dataset = create_dataset(val_files, val_ratings,
+                                 batch_size=batch_size)
 
     return train_dataset, val_dataset
 
@@ -319,7 +324,7 @@ def save_model(model, fname='cnn', save_dir='./'):
     model.save_weights(h5file)
 
 
-def read_model(fname='cnn', read_dir='./'):
+def read_model(fname='cnn', read_dir='./models/'):
     '''
     Read the CNN model from file
 
