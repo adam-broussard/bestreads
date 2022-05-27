@@ -238,12 +238,12 @@ def train_cnn(epochs=25, batch_size=32,
     val_data = val_data.sample(frac=1, random_state=2143)
 
     # Create Tensorflow datasets
-    train_dataset = cnn.create_dataset(train_data.file_path,
-                                       train_data.average_rating,
-                                       batch_size=batch_size)
-    val_dataset = cnn.create_dataset(val_data.file_path,
-                                     val_data.average_rating,
-                                     batch_size=batch_size)
+    train_dataset = create_dataset(train_data.file_path,
+                                   train_data.average_rating,
+                                   batch_size=batch_size)
+    val_dataset = create_dataset(val_data.file_path,
+                                 val_data.average_rating,
+                                 batch_size=batch_size)
 
     model = build_cnn()
 
