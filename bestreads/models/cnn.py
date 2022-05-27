@@ -3,18 +3,18 @@ Holds functions for building, training, saving, and reading convolutional
 neural network models.
 '''
 
-from glob import glob
 import os
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
 from matplotlib import image
 from PIL import UnidentifiedImageError
+# pylint: disable=[E0611,E0401]
 from tensorflow.keras.models import Sequential, model_from_yaml
 from tensorflow.keras.layers import (Dense, Dropout, Flatten, Conv2D, Lambda,
                                      MaxPooling2D)
-from tensorflow.keras.optimizers import Adam  # pylint: disable=[E0611]
+from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
+# pylint: enable-[E0611,E0401]
 
 
 def _get_valid_data(data, min_ratings=100,
@@ -65,8 +65,7 @@ def _get_valid_data(data, min_ratings=100,
 
 def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
                               save_dir='./data/processed/cnn/',
-                              cover_dir='./data/covers/',
-                              random_seed=420):
+                              cover_dir='./data/covers/'):
     '''
     Generates folders for train and test set cover images and generates
     symlinks pointing to the original files to save space.
@@ -84,10 +83,10 @@ def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
     valid_data = _get_valid_data(data)
 
     # Split into test and train
-    test_data = valid_data.sample(frac=test_frac, random_state=random_seed)
+    test_data = valid_data.sample(frac=test_frac, random_state=420)
     train_data = valid_data.drop(test_data.index)
 
-    val_data = train_data.sample(frac=val_frac, random_state=random_seed+1)
+    val_data = train_data.sample(frac=val_frac, random_state=421)
     train_data = train_data.drop(val_data.index)
 
     os.makedirs(save_dir + 'train_covers/', exist_ok=True)
@@ -214,7 +213,9 @@ def create_dataset(filenames, ratings, shuffle=False, batch_size=32):
     return dataset
 
 
-def train_cnn(epochs=50):
+def train_cnn(epochs=25, batch_size=32,
+              train_data='./data/processed/cnn/train_ratings.csv',
+              val_data='./data/processed/cnn/train_ratings.csv'):
     '''
     Get the training and validation datasets, and then train the CNN.
 
@@ -227,7 +228,22 @@ def train_cnn(epochs=50):
         model (tf.keras.models.Sequential): The CNN model
     '''
 
-    train_dataset, val_dataset = get_train_val_datasets()
+    batch_size = 32
+
+    train_data = pd.read_csv('./data/processed/cnn/train_ratings.csv')
+    val_data = pd.read_csv('./data/processed/cnn/val_ratings.csv')
+
+    # Shuffle the data
+    train_data = train_data.sample(frac=1, random_state=2974)
+    val_data = val_data.sample(frac=1, random_state=2143)
+
+    # Create Tensorflow datasets
+    train_dataset = cnn.create_dataset(train_data.file_path,
+                                       train_data.average_rating,
+                                       batch_size=batch_size)
+    val_dataset = cnn.create_dataset(val_data.file_path,
+                                     val_data.average_rating,
+                                     batch_size=batch_size)
 
     model = build_cnn()
 
