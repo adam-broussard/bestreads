@@ -63,10 +63,10 @@ def _get_valid_data(data, min_ratings=100,
     return valid_data
 
 
-def split_train_test_data(data, test_frac=0.2,
-                          save_dir='./data/processed/cnn/',
-                          cover_dir='./data/covers/',
-                          random_seed=420):
+def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
+                              save_dir='./data/processed/cnn/',
+                              cover_dir='./data/covers/',
+                              random_seed=420):
     '''
     Generates folders for train and test set cover images and generates
     symlinks pointing to the original files to save space.
@@ -74,6 +74,8 @@ def split_train_test_data(data, test_frac=0.2,
     Args:
         data (pd.DataFrame): All of the goodreads data
         test_frac (float): The fraction of the data to be split into a test set
+        val_frac (float): The fraction of the data to be split into a
+            validation set
         save_dir (string): The directory in which to save the train and test
             set covers
         cover_dir (string): The directory containing the cover image files
@@ -85,28 +87,38 @@ def split_train_test_data(data, test_frac=0.2,
     test_data = valid_data.sample(frac=test_frac, random_state=random_seed)
     train_data = valid_data.drop(test_data.index)
 
+    val_data = train_data.sample(frac=val_frac, random_state=random_seed+1)
+    train_data = train_data.drop(val_data.index)
+
     os.makedirs(save_dir + 'train_covers/', exist_ok=True)
     os.makedirs(save_dir + 'test_covers/', exist_ok=True)
+    os.makedirs(save_dir + 'val_covers/', exist_ok=True)
+
+    # Generate file_path column
+
+    train_data['file_path'] = [save_dir + f'train_covers/train_{idnum:08}.jpg'
+                               for idnum in train_data['id']]
+    test_data['file_path'] = [save_dir + f'test_covers/test_{idnum:08}.jpg'
+                              for idnum in test_data['id']]
+    val_data['file_path'] = [save_dir + f'val_covers/val_{idnum:08}.jpg'
+                             for idnum in val_data['id']]
 
     # Save test and train datasets (note only the average_rating is truly
     # necessary, but including the id allows for some checking that things
     # match up again properly later if needed)
-    train_data[['id', 'average_rating']].to_csv(save_dir + 'train_ratings.csv',
-                                                index=False)
-    test_data[['id', 'average_rating']].to_csv(save_dir + 'test_ratings.csv',
-                                               index=False)
 
-    # Generate folders of symlinks for training and testing datasets
     cover_dir = os.path.abspath(cover_dir) + '/'
-    for train_id in train_data.id:
-        os.symlink(cover_dir + f'{train_id:08}.jpg',
-                   save_dir + 'train_covers/'
-                   + f'train_{train_id:08}.jpg')
+    for sample, name in zip([train_data, test_data, val_data],
+                            ['train', 'test', 'val']):
+        save_cols = ['file_path', 'average_rating']
+        sample[save_cols].to_csv(save_dir + name + '_ratings.csv',
+                                 index=False)
 
-    for test_id in test_data.id:
-        os.symlink(cover_dir + f'{test_id:08}.jpg',
-                   save_dir + 'test_covers/'
-                   + f'test_{test_id:08}.jpg')
+        # Generate folders of symlinks for training and testing datasets
+        for idnum in sample.id:
+            os.symlink(cover_dir + f'{idnum:08}.jpg',
+                       save_dir + name + '_covers/'
+                       + name + f'_{idnum:08}.jpg')
 
 
 def build_cnn():
@@ -117,17 +129,14 @@ def build_cnn():
         model (Sequential): CNN model
     '''
 
-    # This setup with the defualt batch size uses about 7.5 GB of memory and
-    # takes around 30 minutes per epoch of training on Adam's laptop.
     model = Sequential([
                         Conv2D(64, 3,
                                activation='relu',
                                input_shape=(450, 300, 3)),
                         MaxPooling2D(4),
-                        Conv2D(128, 3, activation='relu'),
-                        Conv2D(128, 3, activation='relu'),
-                        MaxPooling2D(2),
                         Conv2D(64, 3, activation='relu'),
+                        MaxPooling2D(4),
+                        Conv2D(32, 3, activation='relu'),
                         Flatten(),
                         Dense(64, activation='relu'),
                         Dropout(0.5),
@@ -203,80 +212,6 @@ def create_dataset(filenames, ratings, shuffle=False, batch_size=32):
     dataset = dataset.prefetch(buffer_size=autotune)
 
     return dataset
-
-
-def split_files_train_val(val_frac=0.15,
-                          rating_path='./data/processed/cnn/train_ratings.csv',
-                          img_dir='./data/processed/cnn/train_covers/',
-                          rand_seed=1337):
-    '''
-    Splits the training set into a true training set and a validation set using
-    the filenames and ratings.
-
-    Args:
-        val_frac (float): The fraction of the original training set to use for
-            validation
-        rating_path (string): The path to the .csv file containing an
-            'average_ratings' column.  Should correspond to the sorted cover
-            image filenames.
-        img_dir (string): The directory containing cover images for training
-
-    Returns:
-        train_files (iter): Shuffled list of cover filenames for training
-        train_ratings (iter): Shuffled list of ratings for training
-        val_files (iter): Shuffled list of cover filenames for validation
-        val_ratings (iter): Shuffled list of ratings for validation
-    '''
-
-    # Make sure to sort!  That is how we correlate these with their ratings.
-    file_paths = np.array(sorted(glob(img_dir + '*')))
-    ratings = pd.read_csv(rating_path, usecols=['average_rating'],
-                          squeeze=True).to_numpy()
-
-    if len(file_paths) != len(ratings):
-        raise RuntimeError(f'There are {len(file_paths)} files and '
-                           + f'{len(ratings)} ratings.  Numbers of files are '
-                           + 'ratings should be equal.')
-
-    # Split into training and validation sets and split the filenames and
-    # ratings accordingly
-    start_inds = np.arange(len(file_paths))
-    np.random.seed(rand_seed)
-    np.random.shuffle(start_inds)
-    train_inds = start_inds[:int((1-val_frac)*len(start_inds))]
-    val_inds = start_inds[int((1-val_frac)*len(start_inds)):]
-
-    train_files = list(file_paths[train_inds])
-    train_ratings = list(ratings[train_inds])
-    val_files = list(file_paths[val_inds])
-    val_ratings = list(ratings[val_inds])
-
-    return (train_files, train_ratings), (val_files, val_ratings)
-
-
-def get_train_val_datasets(batch_size=32, val_frac=0.15):
-    '''
-    Splits data into training and validation sets and generates Dataset objects
-    to hold them.
-
-    Args:
-        val_frac (float): Fraction of the training data to reserve for
-            validation
-
-    Returns:
-        train_dataset (tf.data.Dataset): The batched training data with ratings
-        val_dataset (tf.data.Dataset): the batched validation data with ratings
-    '''
-
-    ((train_files, train_ratings),
-        (val_files, val_ratings)) = split_files_train_val(val_frac)
-
-    train_dataset = create_dataset(train_files, train_ratings,
-                                   batch_size=batch_size)
-    val_dataset = create_dataset(val_files, val_ratings,
-                                 batch_size=batch_size)
-
-    return train_dataset, val_dataset
 
 
 def train_cnn(epochs=50):
