@@ -1,3 +1,4 @@
+# pylint: disable-all
 """
 This file comes from https://github.com/dlukes/rbo
 
