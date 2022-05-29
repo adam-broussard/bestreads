@@ -117,8 +117,6 @@ def subsample_json(src_file_path, dest_file_path,
              memory, but will also converge faster.
     """
 
-    data = []
-
     with open(src_file_path, 'r', encoding='utf-8') as rf:
 
         # Count the lines
@@ -129,7 +127,46 @@ def subsample_json(src_file_path, dest_file_path,
     random.seed(3423)
     random.shuffle(line_read_order)
 
+    data = get_samples_from_json(src_file_path, min_ratings, samples,
+                                 overshoot, line_read_order)
+
+    if len(data) > samples:
+        print(f'Paring down samples to {samples}.')
+        data = data[:samples]
+
+    # Save the new sample to file
+    with open(dest_file_path, 'w', encoding='utf-8') as wf:
+        for info in data:
+            wf.write(json.dumps(info))
+            wf.write('\n')
+
+
+def _get_samples_from_json(src_file_path, min_ratings, samples, overshoot,
+                           line_read_order):
+    """
+    Gets samples from a JSON file that have at least min_ratings.  Avoids
+    reading in the full file by instead reading random lines until the sample
+    is assembled.
+
+    Args:
+        src_file_path (string): Path to the file to be read.
+        min_ratings (int): Minimum number of ratings allowed for books in the
+            subsample.
+        samples (int): Number of books to draw for the subsample.
+        overshoot (float): Determines how large chunks of books should be that
+             are considered for the subsample.  Larger numbers will use more
+             memory, but will also converge faster.
+        line_read_Order (iterable): A randomized list of the order in which to
+            consider lines in the file
+
+    Returns:
+        data (list): A list of dicts containing book information for the
+            subsample.
+    """
+
+    data = []
     ind = 0
+
     while len(data) < samples and ind < num_lines-1:
 
         num_lines_to_read = max([int((samples - len(data))*overshoot), 10000])
@@ -151,15 +188,8 @@ def subsample_json(src_file_path, dest_file_path,
 
         ind += num_lines_to_read
 
-    if len(data) > samples:
-        print(f'Paring down samples to {samples}.')
-        data = data[:samples]
+    return data
 
-    # Save the new sample to file
-    with open(dest_file_path, 'w', encoding='utf-8') as wf:
-        for info in data:
-            wf.write(json.dumps(info))
-            wf.write('\n')
 
 
 def amnestic_reader(file_path, line_nums):
