@@ -3,6 +3,7 @@ Holds functions for building, training, saving, and reading convolutional
 neural network models.
 '''
 
+import json
 import os
 import pandas as pd
 from tqdm import tqdm
@@ -17,18 +18,38 @@ import tensorflow as tf
 # pylint: enable-[E0611,E0401]
 
 
-def _get_valid_data(data, min_ratings=100,
-                    cover_folder='./data/covers/'):
+def get_data_from_json(file_path):
+    """
+    Reads book data from a JSON file and parses it into a pandas DataFrame
+
+    Args:
+        file_path (string): The path to the JSON file
+
+    Returns:
+        A pandas dictionary with book ID's and average ratings.
+    """
+
+    bookdata = {'id': [], 'average_rating': []}
+
+    with open(file_path, 'r') as rf:
+
+        for line in rf:
+            info = json.loads(line)
+
+            bookdata['id'].append(int(info['book_id']))
+            bookdata['average_rating'].append(float(info['average_rating']))
+
+    return pd.DataFrame.from_dict(bookdata)
+
+
+def _get_valid_data(data, cover_folder='./data/covers/'):
     '''
-    Eliminates any data with a low nubmer of ratings, null values for
-    average_rating, or unreadable cover images
+    Eliminates any data with unreadable cover images
 
     Args:
         data (pandas.DataFrame): All of the goodreads data (or at least a
             subset with 'id', 'cover_link', 'rating_count', and
             'average_rating' defined)
-        min_ratings (int): The minimum number of ratings for a book to not be
-            excluded
         cover_folder (string): The file path where covers are saved
 
     Returns:
@@ -36,23 +57,18 @@ def _get_valid_data(data, min_ratings=100,
             and cover images
     '''
 
-    # Maks sure all of the necessary data is present
-    valid = (data[['id',
-                   'cover_link',
-                   'rating_count',
-                   'average_rating']].notnull().all(axis=1)
-             & (data['rating_count'] > min_ratings)).to_list()
+    # Stores which entries have valid images
+    valid = pd.Series([True, ] * len(data))
 
     # Make sure the cover art is readable (which is generally true, but has a
     # few exceptions)
     for x, row in enumerate(tqdm(data.itertuples(), total=len(data))):
-        if valid[x]:
-            image_fname = f'{cover_folder}{row.id:08}.jpg'
-            try:
-                image.imread(image_fname)
-            except UnidentifiedImageError:
-                print(image_fname + ' unreadable.')
-                valid[x] = False
+        image_fname = f'{cover_folder}{row.id:08}.jpg'
+        try:
+            image.imread(image_fname)
+        except UnidentifiedImageError:
+            print(image_fname + ' unreadable.')
+            valid[x] = False
 
     valid_data = data[valid]
 

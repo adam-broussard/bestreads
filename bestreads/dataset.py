@@ -4,7 +4,9 @@ analysis and cleaning it.
 """
 
 from itertools import repeat
+import json
 import multiprocessing
+import random
 import os
 import warnings
 import kaggle
@@ -94,3 +96,111 @@ def download_covers(url_list, id_list, savedir='data/covers/',
         for this_url, this_id in tqdm(zip(url_list, id_list),
                                       total=len(url_list)):
             _download_single(this_url, this_id, savedir, verbose)
+
+
+def subsample_json(src_file_path, dest_file_path,
+                   min_ratings=100, samples=100000, overshoot=3.):
+    """
+    Randomly samples book entries from a JSON file to produce a subsample such
+    that each book has at least 100 associated ratings.  Saves the results into
+    a new JSON.
+
+    Args:
+        src_file_path (string): Path to the file to be read.
+        dest_file_path (string): Where to save the new JSON file with the
+            subsample.
+        min_ratings (int): Minimum number of ratings allowed for books in the
+            subsample.
+        samples (int): Number of books to draw for the subsample.
+        overshoot (float): Determines how large chunks of books should be that
+             are considered for the subsample.  Larger numbers will use more
+             memory, but will also converge faster.
+    """
+
+    data = []
+
+    with open(src_file_path, 'r') as rf:
+
+        # Count the lines
+        num_lines = len([None for _ in rf])
+        line_read_order = list(range(num_lines))
+
+    # Create a random line ordering
+    random.seed(3423)
+    random.shuffle(line_read_order)
+
+    ind = 0
+    while len(data) < samples and ind < num_lines-1:
+
+        num_lines_to_read = max([int((samples - len(data))*overshoot), 10000])
+
+        lines_to_read = set(line_read_order[ind:ind+num_lines_to_read])
+        readlines = amnestic_reader(src_file_path, lines_to_read)
+
+        for line in readlines:
+            info = json.loads(line)
+
+            try:
+                if (int(info['ratings_count']) >= min_ratings
+                   and info['image_url'] != ''):
+                    data.append(info)
+            except ValueError:
+                pass
+
+        print(f'{len(data)} of {samples} drawn.')
+
+        ind += num_lines_to_read
+
+    if len(data) > samples:
+        print(f'Paring down samples to {samples}.')
+        data = data[:samples]
+
+    # Save the new sample to file
+    with open(dest_file_path, 'w') as wf:
+        for item in data:
+            wf.write(json.dumps(item))
+            wf.write('\n')
+
+
+def amnestic_reader(file_path, line_nums):
+    """
+    A "forgetful" reader that reads specific lines from a file and forgets
+    everything else.  This is particularly handy when reading lines from
+    very large files that can't be stored in memory.
+
+    Args:
+        file_path (string): Path to file that will be read in
+        line_nums (string): An iterable of line numbers to read
+
+    Yields:
+        line (string): Line text
+    """
+
+    with open(file_path, 'r') as rf:
+        for line_num, line in enumerate(rf):
+            if line_num in line_nums:
+                yield line
+
+
+def get_img_info_json(file_path):
+    """
+    Gets image URL's from a JSON file containing book information.
+
+    Args:
+        file_path (string): Path to file to be read
+
+    Returns:
+        bookdata (dict): Contains book ID numbers and cover image URL's
+    """
+
+    bookdata = {'image_url': [], 'book_id': []}
+
+    with open(file_path, 'r') as rf:
+
+        for line in rf:
+            linedata = json.loads(line)
+
+            bookdata['book_id'].append(linedata['book_id'])
+            bookdata['image_url'].append(linedata['image_url'])
+
+    return bookdata
