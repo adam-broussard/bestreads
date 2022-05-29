@@ -119,7 +119,7 @@ def subsample_json(src_file_path, dest_file_path,
 
     data = []
 
-    with open(src_file_path, 'r') as rf:
+    with open(src_file_path, 'r', encoding='utf-8') as rf:
 
         # Count the lines
         num_lines = len([None for _ in rf])
@@ -156,7 +156,7 @@ def subsample_json(src_file_path, dest_file_path,
         data = data[:samples]
 
     # Save the new sample to file
-    with open(dest_file_path, 'w') as wf:
+    with open(dest_file_path, 'w', encoding='utf-8') as wf:
         for info in data:
             wf.write(json.dumps(info))
             wf.write('\n')
@@ -176,7 +176,7 @@ def amnestic_reader(file_path, line_nums):
         line (string): Line text
     """
 
-    with open(file_path, 'r') as rf:
+    with open(file_path, 'r', encoding='utf-8') as rf:
         for line_num, line in enumerate(rf):
             if line_num in line_nums:
                 yield line
@@ -195,7 +195,7 @@ def get_img_info_json(file_path):
 
     bookdata = {'image_url': [], 'book_id': []}
 
-    with open(file_path, 'r') as rf:
+    with open(file_path, 'r', encoding='utf-8') as rf:
 
         for line in rf:
             linedata = json.loads(line)

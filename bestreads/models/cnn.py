@@ -31,7 +31,7 @@ def get_data_from_json(file_path):
 
     bookdata = {'id': [], 'average_rating': []}
 
-    with open(file_path, 'r') as rf:
+    with open(file_path, 'r', encoding='utf-8') as rf:
 
         for line in rf:
             info = json.loads(line)
