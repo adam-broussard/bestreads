@@ -117,18 +117,8 @@ def subsample_json(src_file_path, dest_file_path,
              memory, but will also converge faster.
     """
 
-    with open(src_file_path, 'r', encoding='utf-8') as rf:
-
-        # Count the lines
-        num_lines = len([None for _ in rf])
-        line_read_order = list(range(num_lines))
-
-    # Create a random line ordering
-    random.seed(3423)
-    random.shuffle(line_read_order)
-
-    data = get_samples_from_json(src_file_path, min_ratings, samples,
-                                 overshoot, line_read_order)
+    data = _get_samples_from_json(src_file_path, min_ratings, samples,
+                                  overshoot)
 
     if len(data) > samples:
         print(f'Paring down samples to {samples}.')
@@ -141,8 +131,7 @@ def subsample_json(src_file_path, dest_file_path,
             wf.write('\n')
 
 
-def _get_samples_from_json(src_file_path, min_ratings, samples, overshoot,
-                           line_read_order):
+def _get_samples_from_json(src_file_path, min_ratings, samples, overshoot):
     """
     Gets samples from a JSON file that have at least min_ratings.  Avoids
     reading in the full file by instead reading random lines until the sample
@@ -156,13 +145,21 @@ def _get_samples_from_json(src_file_path, min_ratings, samples, overshoot,
         overshoot (float): Determines how large chunks of books should be that
              are considered for the subsample.  Larger numbers will use more
              memory, but will also converge faster.
-        line_read_Order (iterable): A randomized list of the order in which to
-            consider lines in the file
 
     Returns:
         data (list): A list of dicts containing book information for the
             subsample.
     """
+
+    with open(src_file_path, 'r', encoding='utf-8') as rf:
+
+        # Count the lines
+        num_lines = len([None for _ in rf])
+        line_read_order = list(range(num_lines))
+
+    # Create a random line ordering
+    random.seed(3423)
+    random.shuffle(line_read_order)
 
     data = []
     ind = 0
@@ -189,7 +186,6 @@ def _get_samples_from_json(src_file_path, min_ratings, samples, overshoot,
         ind += num_lines_to_read
 
     return data
-
 
 
 def amnestic_reader(file_path, line_nums):
