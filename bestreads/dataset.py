@@ -157,8 +157,8 @@ def subsample_json(src_file_path, dest_file_path,
 
     # Save the new sample to file
     with open(dest_file_path, 'w') as wf:
-        for item in data:
-            wf.write(json.dumps(item))
+        for info in data:
+            wf.write(json.dumps(info))
             wf.write('\n')
 
 
