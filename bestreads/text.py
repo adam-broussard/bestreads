@@ -5,15 +5,15 @@ workable data.
 
 import string
 import warnings
+
+import nltk
 import numpy as np
 import pandas as pd
-import nltk
-from tqdm import tqdm
+from langdetect import LangDetectException, detect
+from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from langdetect import detect, LangDetectException
-
+from tqdm import tqdm
 
 nltk.data.path.append('./data/nltk_data/')
 nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
@@ -84,8 +84,11 @@ def _extract_genre_and_votes(str_rating, n, reduce_subgenres,
 
         # Check for subgenres and merge any genres that are the same
         genres = tuple(np.unique(starting_genres))
-        votes = (np.sum(starting_votes[starting_genres == genre])
-                 for genre in genres)
+        votes = []
+        for genre in genres:
+            nvotes = sum([sv for sg,sv in zip(starting_genres,starting_votes) 
+                          if sg == genre])
+            votes.append(nvotes)
 
         # Sort results
         votes, genres = list(zip(*reversed(sorted(zip(votes, genres)))))
