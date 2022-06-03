@@ -25,6 +25,15 @@ nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
 nltk.download('stopwords', download_dir='./data/nltk_data/', quiet=True)
 
 def convert_df_dense_to_sparse(df_dense):
+    """
+    Utility function to convert dense DataFrames to sparse.
+
+    Args:
+        df_dense (pd.DataFrame): The dense DataFrame.
+
+    Returns:
+        df_sparse (pd.DataFrame): The sparse DataFrame.
+    """
     return pd.DataFrame.sparse.from_spmatrix(
         sparse.csc_matrix(np.nan_to_num(df_dense.values)),
         columns=df_dense.columns, 
@@ -41,18 +50,22 @@ class AbstractGenrePredictor(ABC):
         """Predicts the genre of a given description."""
 
 class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
-    def __init__(self, genre_and_votes: Series, book_descriptions: Series, n: int = 10):
-        """_summary_
+    def __init__(self, genre_and_votes: Series, book_descriptions: Series, n_genres: int = 10, verbose: bool = False):
+        """
+        Initializer.
 
         Args:
-            genre_and_votes (Series): _description_
-            book_descriptions (Series): _description_
-            n (int, optional): _description_. Defaults to 10.
+            genre_and_votes (Series): The genre_and_votes column from the data.
+            book_descriptions (Series): The cleaned book descriptions.
+            n_genres (int, optional): The number of genres to get from the data. 
+                10 seems to get everything. Defaults to 10.
+            verbose (bool, optional): Whether to print progress. Defaults to False.
         """
         self.genre_and_votes = genre_and_votes
         self.book_descriptions = book_descriptions
+        self.verbose = verbose
     
-        self.genre_and_votes_all = self._get_all_genres_and_votes(n=n)
+        self.genre_and_votes_all = self._get_all_genres_and_votes(n=n_genres)
         self.genres_unique = self._compute_genres_unique()
         self.terms_unique = self._compute_terms_unique()
         self.term_to_index = {term: i for i,term in enumerate(self.terms_unique)}
@@ -155,7 +168,12 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         '''
         df_raw_weights = pd.DataFrame(columns=self.genres)
 
-        for i,(genres,votes) in self.genre_and_votes_all.iterrows():
+        gviterator = self.genre_and_votes_all.iterrows()
+        if self.verbose is True:
+            print('Computing raw weights.')
+            gviterator = tqdm(gviterator)
+
+        for i,(genres,votes) in gviterator:
             total_votes = np.nansum(votes)
             votedict = {g: v/total_votes for g,v in zip(genres,votes)}
             df_raw_weights.loc[i] = votedict
@@ -174,6 +192,8 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
             _type_: _description_
         """
         df_raw_weights = self._get_raw_weights()
+        if self.verbose is True:
+            print('Computing weights.')
         Amat = (df_raw_weights.to_numpy().T * self.description_lengths.values).T
         Amat = Amat / np.nansum(Amat, axis=0)
         df_aweights = pd.DataFrame(Amat, columns=self.genres, index=self.ibooks)
@@ -184,12 +204,17 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         '''
         # Build the sparse COO matrix of tf(term,book)
         tf_tb_coo = []
-        for ibook, desc in self.book_descriptions.iteritems():
+        desc_iterator = self.book_descriptions.iteritems()
+        if self.verbose is True:
+            print('Computing tf(t,b).')
+            desc_iterator = tqdm(desc_iterator)
+        for ibook, desc in desc_iterator:
             length = len(desc)
             unique_terms = set(desc)
-            tf_dict = {term: desc.count(term)/length for term in unique_terms}
-            for term, tf in tf_dict.items():
-                tf_tb_coo.append([ibook, self.term_to_index[term], tf])
+            # tf_dict = {term: desc.count(term)/length for term in unique_terms}
+            for term in unique_terms:
+                tf_tb_coo.append(
+                    [ibook, self.term_to_index[term], desc.count(term)/length])
         ii, jj, values = zip(*tf_tb_coo)
         tf_tb_sparse = sparse.coo_matrix((values, (ii,jj)))
         
@@ -213,6 +238,8 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         Returns:
             _type_: _description_
         """
+        if self.verbose is True:
+            print('Computing tf(t,g).')
         mat = df_weights.sparse.to_coo().T @ df_tf_tb.sparse.to_coo()
         return pd.DataFrame.sparse.from_spmatrix(
             mat, 
@@ -223,7 +250,11 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
     def _get_theta(self):
         # Build the sparse COO matrix of theta values
         theta_coo = []
-        for ibook, desc in self.book_descriptions.iteritems():
+        desc_iterator = self.book_descriptions.iteritems()
+        if self.verbose is True:
+            print('Computing theta.')
+            desc_iterator = tqdm(desc_iterator)
+        for ibook, desc in desc_iterator:
             unique_terms = set(desc)
             for term in unique_terms:
                 if term in desc:
@@ -251,6 +282,8 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         Returns:
             _type_: _description_
         """
+        if self.verbose is True:
+            print('Computing n_t.')
         mat = df_weights.sparse.to_coo().T @ df_theta.sparse.to_coo()
         return pd.DataFrame.sparse.from_spmatrix(
             mat, 
@@ -271,6 +304,8 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         """
         n_t = self._get_n_t(df_weights, df_theta)
         # fill_value = np.log10(self.ngenres)
+        if self.verbose is True:
+            print('Computing idf.')
         mat = np.log10(self.ngenres / (1 + n_t.values))
         idf_dense = pd.DataFrame(mat, columns=self.terms, index=self.genres)
         return idf_dense
@@ -279,6 +314,11 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         """
         _summary_
         """
+        if self.verbose is True:
+            print('Training weighted TF-IDF predictor.')
+            print(f'  {self.nbooks} books')
+            print(f'  {self.nterms} terms')
+            print(f'  {self.ngenres} genres\n')
         # Compute the term frequency DataFrame: TF(term,genre)
         df_weights = self._get_weights()
         df_tf_tb = self._get_tf_term_book()
@@ -294,6 +334,8 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
             columns=self.terms, 
             index=self.genres
         )
+        if self.verbose is True:
+            print('Training done.')
     
     def query(self, description):
         if self.tfidf is None:
@@ -306,120 +348,3 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         genre_scores = (self.tfidf * terms_present).sum(axis=1)
         genre_scores = genre_scores.sort_values(ascending=False)
         return genre_scores
-
-
-
-# def get_genres_unique(genre_and_votes_all, reduce_subgenres=True):
-#     """
-#     Returns the set of genre names that were voted for (no duplicates).
-
-#     Args:
-#         genre_and_votes_all (pd.DataFrame): The DataFrame containing all of 
-#             the genres that were voted for.
-#         reduce_subgenres (bool): Will store a genre with a name like "Science
-#             Fiction - Aliens" as "Science Fiction" (Default: True)
-            
-#     Returns:
-#         genres_unique (set): The set of genres that were voted for.
-#     """
-#     genre_matrix = np.vstack(genre_and_votes_all['genres'].apply(list))
-#     genres_df = pd.DataFrame(genre_matrix)
-#     genres_df = genres_df[genres_df.loc[:,0] != 'nan']
-
-#     genres_unique = set()
-#     for _,v in genres_df.iteritems():
-#         genres_unique.update(list(v.unique()))
-#     genres_unique.remove('nan')
-#     return genres_unique
-
-# def get_genre_counts_all(genre_and_votes, n=10):
-#     '''
-#     '''
-#     genre_and_votes_all = genre_and_votes.apply(
-#         text._extract_genre_and_votes,
-#         n=n,
-#         reduce_subgenres=True
-#     )
-#     genre_and_votes_all = pd.DataFrame(
-#         genre_and_votes_all.tolist(), 
-#         columns=['genres', 'votes'],
-#         index=genre_and_votes_all.index
-#     )
-
-#     # Get counts for all votes from genres
-#     genres_unique = get_genres_unique(genre_and_votes_all)
-#     genre_counts = {genre: 0 for genre in genres_unique}
-#     for _,row in genre_and_votes_all.iterrows():
-#         for g,v in zip(*row):
-#             if isinstance(g, str):
-#                 genre_counts[g] += v
-                
-#     genre_counts_ser = pd.Series(genre_counts)
-#     genre_counts_ser = genre_counts_ser.sort_values(ascending=False)
-#     genre_counts_ser = genre_counts_ser[genre_counts_ser > 0]            
-#     return genre_counts_ser
-
-# def get_weight_df(genre_and_votes, n=10):
-#     '''
-#     '''
-#     genre_and_votes_all = genre_and_votes.apply(
-#         text._extract_genre_and_votes,
-#         n=n,
-#         reduce_subgenres=True
-#     )
-#     genre_and_votes_all = pd.DataFrame(
-#         genre_and_votes_all.tolist(), 
-#         columns=['genres', 'votes'],
-#         index=genre_and_votes.index
-#     )
-#     genre_counts_ser = get_genre_counts_all(genre_and_votes)
-#     df_weights = pd.DataFrame(columns=genre_counts_ser.keys())
-
-#     for i,(genres,votes) in tqdm(genre_and_votes_all.iterrows()):
-#         total_votes = np.nansum(votes)
-#         votedict = {g: v/total_votes for g,v in zip(genres,votes)}
-#         df_weights.loc[i] = votedict
-#     return convert_df_dense_to_sparse(df_weights)
-
-# def get_book_description_lengths(book_descriptions):
-#     '''
-#     '''
-#     df = book_descriptions.apply(len)
-#     df.name = 'description_lengths'
-#     return df
-
-# def get_term_freq_book_term_df(book_descriptions):
-#     '''
-#     Returns the matrix of term frequencies tf(t,b), where t is a term a b is a
-#     book description, as a DataFrame.
-    
-#     Args:
-#         book_descriptions (pd.DataFrame): The DataFrame containing the book
-#             descriptions.
-        
-#     Returns:
-#         ...
-#     '''
-#     tf_books = pd.Series(index=book_descriptions.index, dtype=object)
-#     for i,desc in book_descriptions.iteritems():
-#         length = len(desc)
-#         unique_terms = set(desc)
-#         tf_books[i] = {term: desc.count(term)/length for term in unique_terms}
-#     return tf_books
-
-# def get_genre_list(genre_and_votes, n_genres=25):
-#     """
-#     Gets the final list of genres to be predicted. This is done by getting the
-#     top genre for each book description, removing sub-genre labels, and cutting
-#     down the list to the top n_genres.
-    
-#     Args:
-    
-    
-#     Returns:
-    
-#     """
-#     # for genre_string in genre_and_votes:
-        
-#     top_genres = text.get_genres(genre_and_votes, n=1, reduce_subgenres=True)
-    
