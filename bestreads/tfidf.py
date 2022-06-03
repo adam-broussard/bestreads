@@ -2,27 +2,15 @@
 ...
 """
 
-import string
-import warnings
 from abc import ABC, abstractmethod
 
-import nltk
 import numpy as np
 import pandas as pd
-from langdetect import LangDetectException, detect
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
 from scipy import sparse
 from tqdm import tqdm
 
 from bestreads import text
 
-Series = pd.core.series.Series
-
-nltk.data.path.append('./data/nltk_data/')
-nltk.download('punkt', download_dir='./data/nltk_data/', quiet=True)
-nltk.download('stopwords', download_dir='./data/nltk_data/', quiet=True)
 
 def convert_df_dense_to_sparse(df_dense):
     """
@@ -41,6 +29,7 @@ def convert_df_dense_to_sparse(df_dense):
     )
 
 class AbstractGenrePredictor(ABC):
+    """The abstract base class for a book description genre predictor."""
     @abstractmethod
     def train(self):
         """Trains the predictor on the training data."""
@@ -50,13 +39,13 @@ class AbstractGenrePredictor(ABC):
         """Predicts the genre of a given description."""
 
 class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
-    def __init__(self, genre_and_votes: Series, book_descriptions: Series, n_genres: int = 10, verbose: bool = False):
+    def __init__(self, genre_and_votes: pd.Series, book_descriptions: pd.Series, n_genres: int = 10, verbose: bool = False):
         """
         Initializer.
 
         Args:
-            genre_and_votes (Series): The genre_and_votes column from the data.
-            book_descriptions (Series): The cleaned book descriptions.
+            genre_and_votes (pd.Series): The genre_and_votes column from the data.
+            book_descriptions (pd.Series): The cleaned book descriptions.
             n_genres (int, optional): The number of genres to get from the data. 
                 10 seems to get everything. Defaults to 10.
             verbose (bool, optional): Whether to print progress. Defaults to False.
@@ -78,29 +67,46 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
 
     @property
     def ibooks(self):
+        """indices of books"""
         return self.genre_and_votes.index
     
     @property
     def terms(self):
+        """list of terms"""
         return self.terms_unique
     
     @property
     def genres(self):
+        """list of genres"""
         return self.genres_unique
     
     @property
     def nbooks(self):
+        """number of books"""
         return self.genre_and_votes.shape[0]
     
     @property
     def nterms(self):
+        """number of terms"""
         return len(self.terms_unique)
     
     @property
     def ngenres(self):
+        """number of genres"""
         return len(self.genres_unique)
 
     def _get_all_genres_and_votes(self, n=10):
+        """
+        Gets the votes for all genres for all books.
+
+        Args:
+            n (int, optional): The top number of genres to grab. Defaults to 10.
+
+        Returns:
+            genre_and_votes_all (pd.DataFrame): The DataFrame containing 
+                'genres' and 'votes' columns, each containing a list of the 
+                genres and votes, respectively.
+        """
         genre_and_votes_all = self.genre_and_votes.apply(
             text._extract_genre_and_votes,
             n=n,
@@ -113,6 +119,12 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         )
         
     def _compute_terms_unique(self):
+        """
+        Computes the sorted unique terms across all descriptions.
+
+        Returns:
+            terms_unique (list): The sorted list of unique terms.
+        """
         terms_unique = set()
         for _,terms in self.book_descriptions.iteritems():
             terms_unique.update(terms)
@@ -142,15 +154,23 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         return sorted(genres_unique)
     
     def _compute_book_description_lengths(self):
-        '''
-        '''
+        """
+        llll
+
+        Returns:
+            _type_: _description_
+        """
         df = self.book_descriptions.apply(len)
         df.name = 'description_lengths'
         return df
 
     def _get_genre_counts_all(self):
-        '''
-        '''
+        """
+        Counts the number of votes for each genre.
+
+        Returns:
+            genre_counts (pd.Series): The counts for each genre.
+        """
         # Get counts for all votes from genres
         genre_counts = {genre: 0 for genre in self.genres_unique}
         for _,row in self.genre_and_votes_all.iterrows():
@@ -158,10 +178,10 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
                 if isinstance(g, str):
                     genre_counts[g] += v
                     
-        genre_counts_ser = pd.Series(genre_counts)
-        genre_counts_ser = genre_counts_ser.sort_values(ascending=False)
-        genre_counts_ser = genre_counts_ser[genre_counts_ser > 0]            
-        return genre_counts_ser
+        genre_counts = pd.Series(genre_counts)
+        genre_counts = genre_counts.sort_values(ascending=False)
+        genre_counts = genre_counts[genre_counts > 0]            
+        return genre_counts
     
     def _get_raw_weights(self):
         '''
