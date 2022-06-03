@@ -186,9 +186,7 @@ def _parse(file_name, rating):
     image_decoded = tf.image.decode_jpeg(image_string, channels=3)
     # Resize it to fixed shape
     image_resized = tf.image.resize(image_decoded, [450, 300])
-    # Normalize it from [0, 255] to [0.0, 1.0]
-    image_normalized = image_resized / 255.0
-    return image_normalized, rating
+    return image_resized, rating
 
 
 def create_dataset(filenames, ratings, shuffle=False, batch_size=32):
@@ -243,8 +241,6 @@ def train_cnn(epochs=25, batch_size=32,
             history of the model
         model (tf.keras.models.Sequential): The CNN model
     '''
-
-    batch_size = 32
 
     train_data = pd.read_csv('./data/processed/cnn/train_ratings.csv')
     val_data = pd.read_csv('./data/processed/cnn/val_ratings.csv')

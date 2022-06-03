@@ -81,7 +81,8 @@ def download_covers(url_list, id_list, savedir='data/covers/',
         url_list = url_list[~url_list.isnull()]
 
     if enable_multithreading:
-        print(f'Downloading cover art with multithreading to "{savedir}"...')
+        print('Downloading cover art with multithreading to '
+              + f'"{os.path.abspath(savedir)}"...')
         # Function can't be local for multiprocessing to work
         with multiprocessing.Pool() as pool:
             # tqdm is a bit janky, but it will get the job done if
@@ -226,7 +227,7 @@ def get_img_info_json(file_path):
         for line in rf:
             linedata = json.loads(line)
 
-            bookdata['book_id'].append(linedata['book_id'])
+            bookdata['book_id'].append(int(linedata['book_id']))
             bookdata['image_url'].append(linedata['image_url'])
 
     return bookdata
