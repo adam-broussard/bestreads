@@ -25,7 +25,8 @@ setup(
                       'pandas',
                       'nltk',
                       'tqdm',
-                      'langdetect'
+                      'langdetect',
+                      'flask'
                       ],
 
     classifiers=[
