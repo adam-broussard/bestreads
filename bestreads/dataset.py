@@ -217,7 +217,8 @@ def get_img_info_json(file_path):
         file_path (string): Path to file to be read
 
     Returns:
-        bookdata (dict): Contains book ID numbers and cover image URL's
+        bookdata (pandas.DataFrame): Contains book ID numbers and cover image
+            URL's
     """
 
     bookdata = {'image_url': [], 'book_id': []}
@@ -230,4 +231,4 @@ def get_img_info_json(file_path):
             bookdata['book_id'].append(int(linedata['book_id']))
             bookdata['image_url'].append(linedata['image_url'])
 
-    return bookdata
+    return pd.DataFrame.from_dict(bookdata)
