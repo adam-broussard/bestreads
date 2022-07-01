@@ -359,11 +359,14 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         if self.verbose is True:
             print('Training done.')
     
-    def query(self, description):
+    def query(self, description, skip_cleaning=False):
         if self.tfidf is None:
             raise ValueError('Predictor not trained yet. Call train() first.')
         
-        tokenized_description = text.clean_text(description)
+        if skip_cleaning is False:
+            tokenized_description = text.clean_text(description)
+        else:
+            tokenized_description = description
         description_terms = set(tokenized_description)
         # terms_present = [1 if term in description_terms else 0 
         #                  for term in self.terms_unique]
