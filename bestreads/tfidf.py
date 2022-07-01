@@ -39,6 +39,8 @@ class AbstractGenrePredictor(ABC):
         """Predicts the genre of a given description."""
 
 class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
+    '''
+    '''
     def __init__(self, genre_and_votes: pd.Series, book_descriptions: pd.Series, n_genres: int = 10, verbose: bool = False):
         """
         Initializer.
@@ -363,8 +365,9 @@ class WeightedTFIDFGenrePredictor(AbstractGenrePredictor):
         
         tokenized_description = text.clean_text(description)
         description_terms = set(tokenized_description)
-        terms_present = [1 if term in description_terms else 0 
-                         for term in self.terms_unique]
-        genre_scores = (self.tfidf * terms_present).sum(axis=1)
+        # terms_present = [1 if term in description_terms else 0 
+        #                  for term in self.terms_unique]
+        # genre_scores = (self.tfidf * terms_present).sum(axis=1)
+        genre_scores = self.tfidf[description_terms].sum(axis=1)
         genre_scores = genre_scores.sort_values(ascending=False)
         return genre_scores
