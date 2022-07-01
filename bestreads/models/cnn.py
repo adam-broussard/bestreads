@@ -29,7 +29,7 @@ def get_data_from_json(file_path):
         A pandas dictionary with book ID's and average ratings.
     """
 
-    bookdata = {'id': [], 'average_rating': []}
+    bookdata = {'id': [], 'average_rating': [], 'img_type': []}
 
     with open(file_path, 'r', encoding='utf-8') as rf:
 
@@ -38,6 +38,7 @@ def get_data_from_json(file_path):
 
             bookdata['id'].append(int(info['book_id']))
             bookdata['average_rating'].append(float(info['average_rating']))
+            bookdata['img_type'].append(info['image_url'][-3:])
 
     return pd.DataFrame.from_dict(bookdata)
 
@@ -63,7 +64,7 @@ def _get_valid_data(data, cover_folder='./data/covers/'):
     # Make sure the cover art is readable (which is generally true, but has a
     # few exceptions)
     for x, row in enumerate(tqdm(data.itertuples(), total=len(data))):
-        image_fname = f'{cover_folder}{row.id:08}.jpg'
+        image_fname = f'{cover_folder}{row.id:08}.{row.img_type}'
         try:
             image.imread(image_fname)
         except UnidentifiedImageError:
@@ -111,12 +112,22 @@ def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
 
     # Generate file_path column
 
-    train_data['file_path'] = [save_dir + f'train_covers/train_{idnum:08}.jpg'
-                               for idnum in train_data['id']]
-    test_data['file_path'] = [save_dir + f'test_covers/test_{idnum:08}.jpg'
-                              for idnum in test_data['id']]
-    val_data['file_path'] = [save_dir + f'val_covers/val_{idnum:08}.jpg'
-                             for idnum in val_data['id']]
+    train_fp = []
+    for ind, row in train_data.iterrows():
+        train_fp.append(save_dir + 'train_covers/'
+                        + f'train_{row.id:08}.{row.img_type}')
+    test_fp = []
+    for ind, row in test_data.iterrows():
+        test_fp.append(save_dir + 'test_covers/'
+                       + f'val_{row.id:08}.{row.img_type}')
+    val_fp = []
+    for ind, row in val_data.iterrows():
+        val_fp.append(save_dir + 'val_covers/'
+                      + f'val_{row.id:08}.{row.img_type}')
+
+    train_data['file_path'] = train_fp
+    test_data['file_path'] = test_fp
+    val_data['file_path'] = val_fp
 
     # Save test and train datasets (note only the average_rating is truly
     # necessary, but including the id allows for some checking that things
@@ -130,10 +141,10 @@ def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
                                  index=False)
 
         # Generate folders of symlinks for training and testing datasets
-        for idnum in sample.id:
-            os.symlink(cover_dir + f'{idnum:08}.jpg',
+        for ind, row in sample.iterrows():
+            os.symlink(cover_dir + f'{row.id:08}.{row.img_type}',
                        save_dir + name + '_covers/'
-                       + name + f'_{idnum:08}.jpg')
+                       + name + f'_{row.id:08}.{row.img_type}')
 
 
 def build_cnn():
