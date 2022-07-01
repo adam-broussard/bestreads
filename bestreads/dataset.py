@@ -12,6 +12,7 @@ import warnings
 import kaggle
 import requests
 from tqdm import tqdm
+import pandas as pd
 
 
 def download_dataset(savedir='data/'):
