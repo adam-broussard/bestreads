@@ -307,9 +307,9 @@ def tf_idf(combined):
             tf = count/total_words
             # Count the number of documents containing this word (not counting
             # this one)
-            num_docs_contain = sum([word in unique_word_counts[gen].index
-                                    for gen in combined.keys()
-                                    if gen != genre])
+            num_docs_contain = sum(word in unique_word_counts[gen].index
+                                   for gen in combined.keys()
+                                   if gen != genre)
             idf = np.log(num_docs/(1+num_docs_contain))
             result[genre][word] = tf*idf
 
@@ -340,8 +340,8 @@ def query(text, tf_idf_table, weight_scheme=0):
     # weighting.
     query_term_weight = {key: 1. for key in set(tokenized_description)}
     if weight_scheme == 1:
-        mode_count = max([tokenized_description.count(word)
-                          for word in set(tokenized_description)])
+        mode_count = max(tokenized_description.count(word)
+                         for word in set(tokenized_description))
 
         def query_weight(word, doc_freq):
             return ((0.5
