@@ -25,7 +25,10 @@ setup(
                       'pandas',
                       'nltk',
                       'tqdm',
-                      'langdetect'
+                      'langdetect',
+                      'tensorflow',
+                      'keras',
+                      'matplotlib'
                       ],
 
     classifiers=[
