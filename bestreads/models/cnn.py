@@ -113,15 +113,15 @@ def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
     # Generate file_path column
 
     train_fp = []
-    for ind, row in train_data.iterrows():
+    for _, row in train_data.iterrows():
         train_fp.append(save_dir + 'train_covers/'
                         + f'train_{row.id:08}.{row.img_type}')
     test_fp = []
-    for ind, row in test_data.iterrows():
+    for _, row in test_data.iterrows():
         test_fp.append(save_dir + 'test_covers/'
                        + f'val_{row.id:08}.{row.img_type}')
     val_fp = []
-    for ind, row in val_data.iterrows():
+    for _, row in val_data.iterrows():
         val_fp.append(save_dir + 'val_covers/'
                       + f'val_{row.id:08}.{row.img_type}')
 
@@ -136,12 +136,12 @@ def split_train_val_test_data(data, test_frac=0.2, val_frac=0.2,
     cover_dir = os.path.abspath(cover_dir) + '/'
     for sample, name in zip([train_data, test_data, val_data],
                             ['train', 'test', 'val']):
-        save_cols = ['file_path', 'average_rating']
-        sample[save_cols].to_csv(save_dir + name + '_ratings.csv',
-                                 index=False)
+        sample[['file_path', 'average_rating']].to_csv(save_dir + name
+                                                       + '_ratings.csv',
+                                                       index=False)
 
         # Generate folders of symlinks for training and testing datasets
-        for ind, row in sample.iterrows():
+        for _, row in sample.iterrows():
             os.symlink(cover_dir + f'{row.id:08}.{row.img_type}',
                        save_dir + name + '_covers/'
                        + name + f'_{row.id:08}.{row.img_type}')
